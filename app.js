@@ -800,10 +800,392 @@ async function updateWeatherCard(lat, lng){
   ui.wxNext.textContent = 'טיפ: גרור את המפה לאזור אחר ולחץ רענן כדי לראות מז״א שם.';
 }
 
+// Weather-Aware Trip Planning Functions
+async function updateTripPlanningWeather(lat, lng) {
+  try {
+    const weatherData = await getWeather(lat, lng);
+    currentWeatherData = weatherData;
+    
+    // Update current weather display in trip planning
+    const currentWeatherEl = document.getElementById('currentWeather');
+    if (currentWeatherEl && weatherData?.current) {
+      const temp = Math.round(weatherData.current.temperature_2m || 0);
+      const isDay = weatherData.current.is_day;
+      const weatherIcon = getWeatherIcon(weatherData.current, isDay);
+      const weatherDesc = getWeatherDescription(weatherData.current, isDay);
+      
+      currentWeatherEl.innerHTML = `
+        <span class="weather-icon">${weatherIcon}</span>
+        <span class="weather-temp">${temp}°C</span>
+        <span class="weather-desc">${weatherDesc}</span>
+      `;
+    }
+    
+    // Update weather forecast
+    await updateWeatherForecast(weatherData);
+    
+    // Update weather recommendations
+    updateWeatherRecommendations(weatherData);
+    
+  } catch (error) {
+    console.error('Error updating trip planning weather:', error);
+    const currentWeatherEl = document.getElementById('currentWeather');
+    if (currentWeatherEl) {
+      currentWeatherEl.innerHTML = `
+        <span class="weather-icon">⚠️</span>
+        <span class="weather-temp">--°</span>
+        <span class="weather-desc">שגיאה בטעינת מזג אוויר</span>
+      `;
+    }
+  }
+}
+
+async function updateWeatherForecast(weatherData) {
+  const forecastEl = document.getElementById('weatherForecast');
+  if (!forecastEl || !weatherData?.daily) return;
+  
+  try {
+    const daily = weatherData.daily;
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Today's forecast
+    const todayTemp = daily.temperature_2m_max?.[0] ? Math.round(daily.temperature_2m_max[0]) : '--';
+    const todayIcon = getWeatherIconForDaily(daily, 0);
+    const todayRec = getWeatherRecommendation(daily, 0);
+    
+    // Tomorrow's forecast  
+    const tomorrowTemp = daily.temperature_2m_max?.[1] ? Math.round(daily.temperature_2m_max[1]) : '--';
+    const tomorrowIcon = getWeatherIconForDaily(daily, 1);
+    const tomorrowRec = getWeatherRecommendation(daily, 1);
+    
+    forecastEl.innerHTML = `
+      <div class="forecast-day">
+        <span class="day-label">היום</span>
+        <span class="day-weather">${todayIcon} ${todayTemp}°</span>
+        <span class="day-recommendation">${todayRec}</span>
+      </div>
+      <div class="forecast-day">
+        <span class="day-label">מחר</span>
+        <span class="day-weather">${tomorrowIcon} ${tomorrowTemp}°</span>
+        <span class="day-recommendation">${tomorrowRec}</span>
+      </div>
+    `;
+    
+    weatherForecastData = { today: daily, todayTemp, tomorrowTemp };
+    
+  } catch (error) {
+    console.error('Error updating weather forecast:', error);
+    forecastEl.innerHTML = `
+      <div class="forecast-day">
+        <span class="day-label">שגיאה</span>
+        <span class="day-weather">⚠️ --°</span>
+        <span class="day-recommendation">לא ניתן לטעון תחזית</span>
+      </div>
+    `;
+  }
+}
+
+function getWeatherIcon(current, isDay) {
+  if (!current) return '🌤️';
+  
+  const temp = current.temperature_2m || 0;
+  const precipitation = current.precipitation || 0;
+  const windSpeed = current.wind_speed_10m || 0;
+  
+  if (precipitation > 5) return '🌧️';
+  if (precipitation > 0.5) return '🌦️';
+  if (windSpeed > 20) return '💨';
+  if (temp > 30) return '🌡️';
+  if (temp < 5) return '🥶';
+  if (isDay) return temp > 25 ? '☀️' : '🌤️';
+  return '🌙';
+}
+
+function getWeatherDescription(current, isDay) {
+  if (!current) return 'לא ידוע';
+  
+  const temp = current.temperature_2m || 0;
+  const precipitation = current.precipitation || 0;
+  
+  if (precipitation > 5) return 'גשום';
+  if (precipitation > 0.5) return 'טפטופים';
+  if (temp > 30) return 'חם מאוד';
+  if (temp < 5) return 'קר מאוד';
+  if (temp > 25) return isDay ? 'נעים וחם' : 'לילה נעים';
+  if (temp > 15) return isDay ? 'נעים' : 'לילה קריר';
+  return isDay ? 'קריר' : 'לילה קר';
+}
+
+function getWeatherIconForDaily(daily, dayIndex) {
+  if (!daily.temperature_2m_max || !daily.precipitation_sum) return '🌤️';
+  
+  const temp = daily.temperature_2m_max[dayIndex] || 0;
+  const precipitation = daily.precipitation_sum[dayIndex] || 0;
+  
+  if (precipitation > 5) return '🌧️';
+  if (precipitation > 0.5) return '🌦️';
+  if (temp > 30) return '🌡️';
+  if (temp < 5) return '🥶';
+  if (temp > 25) return '☀️';
+  return '🌤️';
+}
+
+function getWeatherRecommendation(daily, dayIndex) {
+  if (!daily.temperature_2m_max || !daily.precipitation_sum) return 'תחזית לא זמינה';
+  
+  const temp = daily.temperature_2m_max[dayIndex] || 0;
+  const precipitation = daily.precipitation_sum[dayIndex] || 0;
+  
+  if (precipitation > 5) return 'מומלץ מקומות מקורים';
+  if (precipitation > 0.5) return 'קח מטרייה';
+  if (temp > 30) return 'הישאר בצל, שתה הרבה';
+  if (temp < 5) return 'התלבש חם';
+  if (temp > 25) return 'מושלם לטיול חוץ';
+  if (temp > 15) return 'מזג אוויר נעים';
+  return 'קח ז\'קט';
+}
+
+function updateWeatherRecommendations(weatherData) {
+  const weatherOptimized = document.getElementById('weatherOptimized');
+  if (!weatherOptimized) return;
+  
+  // Add event listener if not already added
+  if (!weatherOptimized.hasAttribute('data-listener-added')) {
+    weatherOptimized.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      console.log('Weather optimization:', isChecked ? 'enabled' : 'disabled');
+      
+      // Update UI to show weather considerations
+      const planningCard = document.querySelector('.weather-planning-card');
+      if (planningCard) {
+        planningCard.classList.toggle('weather-active', isChecked);
+      }
+    });
+    weatherOptimized.setAttribute('data-listener-added', 'true');
+  }
+}
+
+function getWeatherBasedTripRecommendations(weatherData, tripPreferences) {
+  if (!weatherData?.current) return tripPreferences;
+  
+  const temp = weatherData.current.temperature_2m || 20;
+  const precipitation = weatherData.current.precipitation || 0;
+  const windSpeed = weatherData.current.wind_speed_10m || 0;
+  
+  const recommendations = { ...tripPreferences };
+  
+  // Adjust based on weather conditions
+  if (precipitation > 2) {
+    // Rainy weather - prioritize indoor activities
+    recommendations.weatherTips = [
+      'בגלל הגשם, מומלץ לתכנן פעילויות מקורות',
+      'בתי קפה, מוזיאונים ומרכזי קניות יהיו בחירה טובה',
+      'אם יש הפסקה בגשם, נוכל לצאת לטיולים קצרים'
+    ];
+    recommendations.indoorPreference = true;
+  } else if (temp > 30) {
+    // Hot weather
+    recommendations.weatherTips = [
+      'מזג אוויר חם - מומלץ לתכנן פעילויות מוקדמות או מאוחרות',
+      'חפש מקומות עם צל או מיזוג אוויר',
+      'שתה הרבה מים ונח לעתים קרובות'
+    ];
+    recommendations.timePreference = 'early_or_late';
+  } else if (temp < 5) {
+    // Cold weather
+    recommendations.weatherTips = [
+      'מזג אוויר קר - התלבש חם ותכנן פעילויות מחממות',
+      'מקומות חמים כמו בתי קפה ומסעדות יהיו נעימים',
+      'טיולים קצרים עם התחממות תכופה'
+    ];
+    recommendations.indoorPreference = true;
+  } else if (windSpeed > 15) {
+    // Windy weather
+    recommendations.weatherTips = [
+      'רוח חזקה - הימנע מפעילויות חוץ גבוהות',
+      'מקומות מוגנים יהיו נוחים יותר',
+      'זהירות ממטריות וחפצים קלים'
+    ];
+  } else {
+    // Good weather
+    recommendations.weatherTips = [
+      'מזג אוויר מעולה לטיולים!',
+      'זה זמן מושלם לפעילויות חוץ',
+      'נצל את המזג הטוב לחקור את האזור'
+    ];
+    recommendations.outdoorPreference = true;
+  }
+  
+  return recommendations;
+}
+
+// Initialize trip planning interactions
+function initTripPlanningInteractions() {
+  // Duration selection buttons
+  document.querySelectorAll('.duration-option').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      // Update selection
+      document.querySelectorAll('.duration-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      
+      // Handle custom duration
+      const duration = btn.dataset.duration;
+      const customSlider = document.getElementById('customDuration');
+      const durationDisplay = document.getElementById('durationDisplay');
+      
+      if (duration === 'custom') {
+        if (customSlider) {
+          customSlider.hidden = false;
+          updateDurationDisplay(customSlider.value);
+        }
+      } else {
+        if (customSlider) customSlider.hidden = true;
+        if (durationDisplay) {
+          const hours = parseInt(duration) || 8;
+          if (hours >= 16) {
+            durationDisplay.textContent = `${Math.floor(hours/24)} ימים נבחרו`;
+          } else {
+            durationDisplay.textContent = `${hours} שעות נבחרו`;
+          }
+        }
+      }
+    });
+  });
+  
+  // Custom duration slider
+  const customSlider = document.getElementById('customDuration');
+  if (customSlider) {
+    customSlider.addEventListener('input', (e) => {
+      updateDurationDisplay(e.target.value);
+    });
+  }
+  
+  // Interest selection
+  document.querySelectorAll('.interest-option').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      const selectedCount = document.querySelectorAll('.interest-option.selected').length;
+      const isSelected = btn.classList.contains('selected');
+      
+      if (isSelected) {
+        btn.classList.remove('selected');
+      } else if (selectedCount < 4) {
+        btn.classList.add('selected');
+      } else {
+        // Show feedback that max 4 interests allowed
+        showNotification('ניתן לבחור עד 4 תחומי עניין', 'info');
+      }
+    });
+  });
+  
+  // Budget slider
+  const budgetSlider = document.getElementById('budgetRange');
+  const budgetAmount = document.getElementById('budgetAmount');
+  if (budgetSlider && budgetAmount) {
+    budgetSlider.addEventListener('input', (e) => {
+      budgetAmount.textContent = e.target.value;
+    });
+  }
+  
+  // Trip template selection
+  document.querySelectorAll('.template-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      e.preventDefault();
+      const template = card.dataset.template;
+      
+      // Apply template settings
+      applyTripTemplate(template);
+      
+      // Visual feedback
+      card.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        card.style.transform = '';
+      }, 150);
+      
+      showNotification(`תבנית "${card.querySelector('.template-title').textContent}" נבחרה`, 'success');
+    });
+  });
+}
+
+function updateDurationDisplay(hours) {
+  const display = document.getElementById('durationDisplay');
+  if (!display) return;
+  
+  const h = parseInt(hours) || 8;
+  if (h >= 24) {
+    const days = Math.floor(h / 24);
+    const remainingHours = h % 24;
+    if (remainingHours > 0) {
+      display.textContent = `${days} ימים ו-${remainingHours} שעות נבחרו`;
+    } else {
+      display.textContent = `${days} ימים נבחרו`;
+    }
+  } else {
+    display.textContent = `${h} שעות נבחרו`;
+  }
+}
+
+function applyTripTemplate(template) {
+  // Clear current selections
+  document.querySelectorAll('.interest-option.selected').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+  
+  // Apply template-specific interests
+  const templateInterests = {
+    romantic: ['gourmet', 'nature'],
+    family: ['nature', 'history'],
+    adventure: ['nature', 'shopping'],
+    cultural: ['history', 'art']
+  };
+  
+  const interests = templateInterests[template] || [];
+  interests.forEach(interest => {
+    const btn = document.querySelector(`[data-interest="${interest}"]`);
+    if (btn) btn.classList.add('selected');
+  });
+  
+  // Apply template-specific budget
+  const templateBudgets = {
+    romantic: 500,
+    family: 400,
+    adventure: 350,
+    cultural: 300
+  };
+  
+  const budget = templateBudgets[template] || 300;
+  const budgetSlider = document.getElementById('budgetRange');
+  const budgetAmount = document.getElementById('budgetAmount');
+  if (budgetSlider && budgetAmount) {
+    budgetSlider.value = budget;
+    budgetAmount.textContent = budget;
+  }
+}
+
+// Helper function for getting user ID
+function getUserId() {
+  return localStorage.getItem('roamwise_user_id') || 'anonymous_user';
+}
+
+// Helper function for tracking interactions (if not already defined)
+function trackInteraction(placeId, interactionType, metadata = {}) {
+  console.log('Tracking interaction:', { placeId, interactionType, metadata });
+  // This would typically send data to analytics service
+}
+
 // Trip Planning Functionality
 let currentTrip = null;
 let currentActivity = 0;
 let selectedInterests = [];
+
+// Weather-aware trip planning variables
+let currentWeatherData = null;
+let weatherForecastData = null;
 
 // Trip planning event listeners
 ui.tripToggle.addEventListener('click', () => {
@@ -831,7 +1213,163 @@ document.querySelectorAll('.interest-chip').forEach(chip => {
   });
 });
 
-ui.planTripBtn.addEventListener('click', async () => {
+// Add event listener for enhanced trip generation
+document.getElementById('generateTripBtn')?.addEventListener('click', async () => {
+  const center = map.getCenter();
+  
+  document.getElementById('generateTripBtn').disabled = true;
+  document.getElementById('generateTripBtn').innerHTML = `
+    <span class="btn-icon">⏳</span>
+    <span class="btn-text">מייצר טיול חכם</span>
+    <span class="btn-subtitle">כולל התחשבות במזג האוויר</span>
+  `;
+  document.getElementById('tripGenerationStatus').textContent = 'מתכנן טיול מותאם אישית עם מזג אוויר...';
+
+  try {
+    // Get selected preferences
+    const duration = getDurationHours();
+    const interests = getSelectedInterests();
+    const budget = document.getElementById('budgetRange')?.value || 300;
+    const groupType = document.getElementById('groupType')?.value || 'couple';
+    const groupSize = parseInt(document.getElementById('groupSize')?.value) || 2;
+    const weatherOptimized = document.getElementById('weatherOptimized')?.checked || false;
+    
+    // Get weather considerations if enabled
+    let weatherConsiderations = {};
+    if (weatherOptimized && currentWeatherData) {
+      weatherConsiderations = getWeatherBasedTripRecommendations(currentWeatherData, {
+        duration,
+        interests,
+        budget,
+        groupType
+      });
+    }
+    
+    const response = await fetch(`${PROXY}/plan-trip`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        startLocation: { lat: center.lat, lng: center.lng },
+        duration,
+        interests,
+        budget: parseInt(budget),
+        groupSize,
+        groupType,
+        weatherOptimized,
+        weatherData: weatherOptimized ? currentWeatherData : null,
+        weatherConsiderations: weatherOptimized ? weatherConsiderations : null,
+        userId: getUserId()
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.ok) {
+      currentTrip = data.tripPlan;
+      currentActivity = 0;
+      displayEnhancedTripPlan(data.tripPlan, data.tripId);
+      document.getElementById('tripGenerationStatus').textContent = `נוצר טיול מושלם עם התחשבות במזג האוויר! 🎯`;
+      
+      // Show the enhanced trip display
+      document.getElementById('enhancedTripDisplay').hidden = false;
+      
+      // Track this interaction
+      if (typeof trackInteraction === 'function') {
+        trackInteraction('trip_planned', 'enhanced_plan_trip', { 
+          duration, 
+          interests,
+          weatherOptimized,
+          activities_count: data.tripPlan.activities.length 
+        });
+      }
+    } else {
+      document.getElementById('tripGenerationStatus').textContent = `שגיאה: ${data.error}`;
+    }
+  } catch (error) {
+    document.getElementById('tripGenerationStatus').textContent = `שגיאה בתכנון: ${error.message}`;
+    console.error('Trip planning error:', error);
+  } finally {
+    document.getElementById('generateTripBtn').disabled = false;
+    document.getElementById('generateTripBtn').innerHTML = `
+      <span class="btn-icon">🤖</span>
+      <span class="btn-text">יצירת טיול חכם</span>
+      <span class="btn-subtitle">בינה מלאכותית מתקדמת</span>
+    `;
+  }
+});
+
+function getDurationHours() {
+  const durationBtns = document.querySelectorAll('.duration-option.selected');
+  if (durationBtns.length > 0) {
+    const selectedValue = durationBtns[0].dataset.duration;
+    if (selectedValue === 'custom') {
+      return parseInt(document.getElementById('customDuration')?.value) || 8;
+    }
+    return parseInt(selectedValue) || 8;
+  }
+  return 8;
+}
+
+function getSelectedInterests() {
+  const selectedBtns = document.querySelectorAll('.interest-option.selected');
+  const interests = [];
+  selectedBtns.forEach(btn => {
+    const interest = btn.dataset.interest;
+    if (interest) interests.push(interest);
+  });
+  return interests;
+}
+
+function displayEnhancedTripPlan(tripPlan, tripId) {
+  const display = document.getElementById('enhancedTripDisplay');
+  if (!display) return;
+  
+  // Update trip overview
+  document.getElementById('generatedTripTitle').textContent = tripPlan.title || 'הטיול שלך מוכן!';
+  document.getElementById('tripDurationBadge').textContent = `${getDurationHours()} שעות`;
+  document.getElementById('tripCostBadge').textContent = `${tripPlan.estimated_cost || document.getElementById('budgetRange')?.value || 300}₪`;
+  document.getElementById('tripPlacesBadge').textContent = `${tripPlan.activities?.length || 0} מקומות`;
+  
+  // Update itinerary
+  const itinerary = document.getElementById('tripItinerary');
+  if (itinerary && tripPlan.activities) {
+    itinerary.innerHTML = '';
+    
+    tripPlan.activities.forEach((activity, index) => {
+      const activityEl = document.createElement('div');
+      activityEl.className = `itinerary-item ${index === 0 ? 'current' : ''}`;
+      activityEl.innerHTML = `
+        <div class="itinerary-time">${activity.time || `${9 + index * 2}:00`}</div>
+        <div class="itinerary-content">
+          <div class="itinerary-title">${activity.name}</div>
+          <div class="itinerary-description">${activity.description}</div>
+          ${activity.place ? `
+            <div class="itinerary-location">
+              📍 ${activity.place.name}
+              ${activity.place.rating ? `⭐ ${activity.place.rating}` : ''}
+            </div>
+          ` : ''}
+        </div>
+        <div class="itinerary-actions">
+          <button class="itinerary-btn" onclick="navigateToActivity(${index})">🗺️</button>
+          ${activity.place ? `<button class="itinerary-btn" onclick="viewOnMap(${activity.place.lat}, ${activity.place.lng})">👁️</button>` : ''}
+        </div>
+      `;
+      itinerary.appendChild(activityEl);
+    });
+  }
+  
+  // Update insights
+  if (tripPlan.insights) {
+    document.getElementById('totalDuration').textContent = `${getDurationHours()} שעות`;
+    document.getElementById('totalDistance').textContent = tripPlan.insights.totalDistance || '3.2 ק"מ';
+    document.getElementById('avgRating').textContent = tripPlan.insights.avgRating || '4.3';
+    document.getElementById('estimatedCost').textContent = `${tripPlan.estimated_cost || document.getElementById('budgetRange')?.value || 300}₪`;
+  }
+}
+
+// Legacy support for old trip planning
+ui.planTripBtn?.addEventListener('click', async () => {
   if (!here) {
     ui.tripPlanStatus.textContent = 'צריך מיקום תחילה - הפעל מיקום או לחץ על המפה';
     return;
@@ -868,11 +1406,13 @@ ui.planTripBtn.addEventListener('click', async () => {
       ui.tripPlanStatus.textContent = `נוצר טיול מושלם! 🎯`;
       
       // Track this interaction
-      trackInteraction('trip_planned', 'plan_trip', { 
-        duration, 
-        interests: selectedInterests,
-        activities_count: data.tripPlan.activities.length 
-      });
+      if (typeof trackInteraction === 'function') {
+        trackInteraction('trip_planned', 'plan_trip', { 
+          duration, 
+          interests: selectedInterests,
+          activities_count: data.tripPlan.activities.length 
+        });
+      }
     } else {
       ui.tripPlanStatus.textContent = `שגיאה: ${data.error}`;
     }
@@ -1109,6 +1649,15 @@ function initMobileNavigation() {
       // Special handling for map view
       if (targetView === 'map') {
         setTimeout(() => map.invalidateSize(), 300);
+      }
+      
+      // Special handling for trip planning view - load weather data
+      if (targetView === 'trip') {
+        const center = map.getCenter();
+        updateTripPlanningWeather(center.lat, center.lng);
+        
+        // Initialize trip planning UI interactions
+        initTripPlanningInteractions();
       }
       
       // Add haptic feedback on mobile

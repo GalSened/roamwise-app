@@ -29,7 +29,7 @@
 <main id="app" class="mobile-layout" role="main">
   
   <!-- Map View - Simple and Clean -->
-  <section id="mapView" class="mobile-view active" data-view="map">
+  <section id="mapView" class="mobile-view" data-view="map">
     <div id="map" role="application" aria-label="מפה"></div>
     
     <!-- Clear Location Button -->
@@ -55,7 +55,7 @@
   </section>
 
   <!-- Clear Search Interface -->
-  <section id="searchView" class="mobile-view mobile-panel" data-view="search">
+  <section id="searchView" class="mobile-view mobile-panel active" data-view="search">
     <div class="panel-header">
       <h2>🔍 חיפוש מקומות</h2>
       <p class="section-subtitle">מצא מקומות מעניינים בסביבתך</p>
@@ -234,87 +234,262 @@
     </div>
   </section>
 
-  <!-- Clear Trip Planning -->
+  <!-- Enhanced Trip Planning -->
   <section id="tripView" class="mobile-view mobile-panel" data-view="trip">
-    <div class="panel-header">
-      <h2>🗺️ תכנון טיול אוטומטי</h2>
-      <p class="section-subtitle">AI יתכנן לך טיול מושלם לפי ההעדפות שלך</p>
+    <div class="panel-header gradient-bg-1">
+      <h2>🗺️ תכנון טיול חכם ומתקדם</h2>
+      <p class="section-subtitle">AI מתקדם יתכנן לך חוויית טיול מושלמת ומותאמת אישית</p>
     </div>
     
     <div class="panel-content">
       
-      <!-- Trip Planning Form -->
+      <!-- Quick Trip Templates -->
       <section class="card highlight-card">
-        <h3 class="section-title">בואו נתכנן טיול!</h3>
-        
-        <div class="trip-form">
-          <!-- Duration -->
-          <div class="form-group">
-            <label for="tripDuration" class="input-label">כמה זמן יש לך?</label>
-            <select id="tripDuration" class="clear-select">
-              <option value="half-day">חצי יום (4 שעות)</option>
-              <option value="full-day" selected>יום שלם (8 שעות)</option>
-              <option value="weekend">סוף שבוע שלם</option>
-              <option value="custom">זמן מותאם אישית</option>
-            </select>
-          </div>
-
-          <div id="customHoursField" class="form-group" hidden>
-            <label for="customHours" class="input-label">כמה שעות בדיוק?</label>
-            <input id="customHours" type="number" min="1" max="72" value="8" class="main-input">
-          </div>
-
-          <!-- Interests -->
-          <div class="form-group">
-            <label class="input-label">מה מעניין אותך? (בחר כמה שתרצה)</label>
-            <div class="interest-grid">
-              <button type="button" data-interest="food" class="interest-chip">🍽️ אוכל</button>
-              <button type="button" data-interest="culture" class="interest-chip">🎭 תרבות</button>
-              <button type="button" data-interest="adventure" class="interest-chip">🏔️ הרפתקה</button>
-              <button type="button" data-interest="relaxation" class="interest-chip">😌 רגיעה</button>
-              <button type="button" data-interest="nightlife" class="interest-chip">🌙 חיי לילה</button>
-              <button type="button" data-interest="shopping" class="interest-chip">🛍️ קניות</button>
-            </div>
-          </div>
-
-          <!-- Budget and Group -->
-          <div class="row">
-            <div class="form-group">
-              <label for="tripBudget" class="input-label">תקציב:</label>
-              <select id="tripBudget" class="clear-select">
-                <option value="low">חסכני (עד 200₪)</option>
-                <option value="medium" selected>בינוני (200-500₪)</option>
-                <option value="high">נדיב (500₪+)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="groupSize" class="input-label">כמה אנשים?</label>
-              <input id="groupSize" type="number" min="1" max="20" value="1" class="main-input">
-            </div>
-          </div>
-
-          <!-- Transportation -->
-          <div class="form-group">
-            <label for="tripMobility" class="input-label">איך תתנקלו?</label>
-            <select id="tripMobility" class="clear-select">
-              <option value="walking" selected>🚶‍♂️ הליכה</option>
-              <option value="car">🚗 רכב</option>
-              <option value="public">🚌 תחבורה ציבורית</option>
-            </select>
-          </div>
-
-          <button id="planTripBtn" class="primary full-width trip-plan-btn">
-            ✨ תכנן לי טיול מושלם!
+        <h3 class="section-title">🚀 תבניות טיול מהירות</h3>
+        <div class="template-grid">
+          <button class="template-card stagger-item" data-template="romantic">
+            <span class="template-icon">💕</span>
+            <span class="template-title">טיול רומנטי</span>
+            <span class="template-desc">מסעדות יפות ונופים מרהיבים</span>
           </button>
-          <div id="tripPlanStatus" class="status-text"></div>
+          <button class="template-card stagger-item" data-template="family">
+            <span class="template-icon">👨‍👩‍👧‍👦</span>
+            <span class="template-title">טיול משפחתי</span>
+            <span class="template-desc">פעילויות לכל המשפחה</span>
+          </button>
+          <button class="template-card stagger-item" data-template="adventure">
+            <span class="template-icon">🏃‍♂️</span>
+            <span class="template-title">הרפתקה</span>
+            <span class="template-desc">חוויות מרתקות ואתגרים</span>
+          </button>
+          <button class="template-card stagger-item" data-template="cultural">
+            <span class="template-icon">🏛️</span>
+            <span class="template-title">תרבות ואמנות</span>
+            <span class="template-desc">מוזיאונים וגלריות</span>
+          </button>
         </div>
       </section>
 
-      <!-- Trip Plan Display -->
-      <div id="tripPlanDisplay" class="trip-plan-display" hidden></div>
+      <!-- Advanced Trip Customization -->
+      <section class="card">
+        <h3 class="section-title">⚙️ התאמה אישית מתקדמת</h3>
+        
+        <div class="trip-form">
+          <!-- Smart Duration Picker -->
+          <div class="form-group">
+            <label for="tripDuration" class="input-label">🕐 משך הטיול</label>
+            <div class="duration-picker">
+              <button type="button" class="duration-option" data-duration="2">2 שעות</button>
+              <button type="button" class="duration-option" data-duration="4">חצי יום</button>
+              <button type="button" class="duration-option selected" data-duration="8">יום שלם</button>
+              <button type="button" class="duration-option" data-duration="16">סוף שבוע</button>
+              <button type="button" class="duration-option" data-duration="custom">מותאם</button>
+            </div>
+            <input id="customDuration" type="range" min="1" max="72" value="8" class="duration-slider" hidden>
+            <div id="durationDisplay" class="duration-display">8 שעות נבחרו</div>
+          </div>
+
+          <!-- Enhanced Interests with Visual Selection -->
+          <div class="form-group">
+            <label class="input-label">🎯 תחומי עניין (בחר עד 4)</label>
+            <div class="interests-grid">
+              <div class="interest-category">
+                <button type="button" data-interest="gourmet" class="interest-option">
+                  <span class="interest-emoji">🍽️</span>
+                  <span class="interest-name">גורמה</span>
+                  <span class="interest-detail">מסעדות מעולות</span>
+                </button>
+              </div>
+              <div class="interest-category">
+                <button type="button" data-interest="nature" class="interest-option">
+                  <span class="interest-emoji">🌿</span>
+                  <span class="interest-name">טבע</span>
+                  <span class="interest-detail">פארקים וגנים</span>
+                </button>
+              </div>
+              <div class="interest-category">
+                <button type="button" data-interest="history" class="interest-option">
+                  <span class="interest-emoji">🏛️</span>
+                  <span class="interest-name">היסטוריה</span>
+                  <span class="interest-detail">אתרים היסטוריים</span>
+                </button>
+              </div>
+              <div class="interest-category">
+                <button type="button" data-interest="shopping" class="interest-option">
+                  <span class="interest-emoji">🛍️</span>
+                  <span class="interest-name">קניות</span>
+                  <span class="interest-detail">חנויות ושווקים</span>
+                </button>
+              </div>
+              <div class="interest-category">
+                <button type="button" data-interest="nightlife" class="interest-option">
+                  <span class="interest-emoji">🌃</span>
+                  <span class="interest-name">חיי לילה</span>
+                  <span class="interest-detail">ברים ומועדונים</span>
+                </button>
+              </div>
+              <div class="interest-category">
+                <button type="button" data-interest="art" class="interest-option">
+                  <span class="interest-emoji">🎨</span>
+                  <span class="interest-name">אמנות</span>
+                  <span class="interest-detail">גלריות ומוזיאונים</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Smart Budget with Visual Indicator -->
+          <div class="form-group">
+            <label class="input-label">💰 תקציב משוער ליום</label>
+            <div class="budget-selector">
+              <input type="range" id="budgetRange" min="50" max="1000" value="300" class="budget-slider">
+              <div class="budget-display">
+                <span id="budgetAmount">300</span>₪ לאדם
+              </div>
+              <div class="budget-indicators">
+                <span class="budget-label">חסכוני</span>
+                <span class="budget-label">נוח</span>
+                <span class="budget-label">נדיב</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Group Configuration -->
+          <div class="row">
+            <div class="form-group">
+              <label for="groupType" class="input-label">👥 סוג הקבוצה</label>
+              <select id="groupType" class="clear-select">
+                <option value="solo">לבד</option>
+                <option value="couple" selected>זוג</option>
+                <option value="friends">חברים</option>
+                <option value="family">משפחה</option>
+                <option value="business">עסקים</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="groupSize" class="input-label">🔢 מספר אנשים</label>
+              <input id="groupSize" type="number" min="1" max="20" value="2" class="main-input">
+            </div>
+          </div>
+
+          <!-- Weather-Aware Planning -->
+          <div class="form-group">
+            <label class="input-label">🌤️ תכנון מבוסס מזג אוויר</label>
+            <div class="weather-planning-card">
+              <div class="weather-info" id="currentWeather">
+                <span class="weather-icon">🌤️</span>
+                <span class="weather-temp">טוען...</span>
+                <span class="weather-desc">בודק תחזית</span>
+              </div>
+              <div class="weather-forecast" id="weatherForecast">
+                <div class="forecast-day">
+                  <span class="day-label">היום</span>
+                  <span class="day-weather">☀️ 24°</span>
+                  <span class="day-recommendation">מושלם לטיול חוץ</span>
+                </div>
+                <div class="forecast-day">
+                  <span class="day-label">מחר</span>
+                  <span class="day-weather">🌧️ 18°</span>
+                  <span class="day-recommendation">מומלץ מקומות מקורים</span>
+                </div>
+              </div>
+              <label class="preference-item weather-consideration">
+                <input type="checkbox" id="weatherOptimized" checked>
+                <span class="preference-text">התאם המלצות למזג האוויר</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Advanced Preferences -->
+          <div class="form-group">
+            <label class="input-label">⚡ העדפות מתקדמות</label>
+            <div class="preferences-grid">
+              <label class="preference-item">
+                <input type="checkbox" id="accessibleOnly">
+                <span class="preference-text">נגיש לנכים</span>
+              </label>
+              <label class="preference-item">
+                <input type="checkbox" id="petFriendly">
+                <span class="preference-text">ידידותי לחיות</span>
+              </label>
+              <label class="preference-item">
+                <input type="checkbox" id="photoOps">
+                <span class="preference-text">מקומות צילום</span>
+              </label>
+              <label class="preference-item">
+                <input type="checkbox" id="localExperience">
+                <span class="preference-text">חוויה מקומית</span>
+              </label>
+              <label class="preference-item">
+                <input type="checkbox" id="indoorBackup">
+                <span class="preference-text">תוכנית גיבוי מקורה</span>
+              </label>
+              <label class="preference-item">
+                <input type="checkbox" id="flexibleTiming">
+                <span class="preference-text">גמישות בזמנים</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- AI Generation Button -->
+          <button id="generateTripBtn" class="primary full-width trip-plan-btn ripple bounce-on-hover">
+            <span class="btn-icon">🤖</span>
+            <span class="btn-text">יצירת טיול חכם</span>
+            <span class="btn-subtitle">בינה מלאכותית מתקדמת</span>
+          </button>
+          <div id="tripGenerationStatus" class="status-text"></div>
+        </div>
+      </section>
+
+      <!-- Enhanced Trip Display -->
+      <div id="enhancedTripDisplay" class="enhanced-trip-display" hidden>
+        <section class="card trip-overview-card gradient-bg-1">
+          <div class="trip-header">
+            <h3 class="trip-title" id="generatedTripTitle">הטיול שלך מוכן!</h3>
+            <div class="trip-meta-info">
+              <span class="trip-duration-badge" id="tripDurationBadge">8 שעות</span>
+              <span class="trip-cost-badge" id="tripCostBadge">300₪</span>
+              <span class="trip-places-badge" id="tripPlacesBadge">5 מקומות</span>
+            </div>
+          </div>
+          <div class="trip-actions">
+            <button class="action-btn primary">📍 התחל ניווט</button>
+            <button class="action-btn secondary">📤 שתף</button>
+            <button class="action-btn ghost">📝 ערוך</button>
+          </div>
+        </section>
+
+        <div id="tripItinerary" class="trip-itinerary"></div>
+
+        <section class="card trip-insights">
+          <h4 class="section-title">📊 תובנות הטיול</h4>
+          <div class="insights-grid">
+            <div class="insight-item">
+              <span class="insight-icon">⏱️</span>
+              <span class="insight-value" id="totalDuration">8 שעות</span>
+              <span class="insight-label">משך כולל</span>
+            </div>
+            <div class="insight-item">
+              <span class="insight-icon">🚶‍♂️</span>
+              <span class="insight-value" id="totalDistance">3.2 ק"מ</span>
+              <span class="insight-label">מרחק הליכה</span>
+            </div>
+            <div class="insight-item">
+              <span class="insight-icon">⭐</span>
+              <span class="insight-value" id="avgRating">4.3</span>
+              <span class="insight-label">דירוג ממוצע</span>
+            </div>
+            <div class="insight-item">
+              <span class="insight-icon">💰</span>
+              <span class="insight-value" id="estimatedCost">280₪</span>
+              <span class="insight-label">עלות משוערת</span>
+            </div>
+          </div>
+        </section>
+      </div>
       
-      <!-- Live Navigation -->
-      <div id="liveNavigation" class="live-navigation" hidden></div>
+      <!-- Smart Live Navigation -->
+      <div id="smartNavigation" class="smart-navigation" hidden></div>
     </div>
   </section>
 
@@ -379,7 +554,7 @@
 
   <!-- Clear Bottom Navigation -->
   <nav id="bottomNav" class="bottom-nav" aria-label="ניווט ראשי">
-    <button class="nav-item" data-view="search" title="חיפוש מקומות">
+    <button class="nav-item active" data-view="search" title="חיפוש מקומות">
       <span class="nav-icon">🔍</span>
       <span class="nav-label">חיפוש</span>
     </button>
@@ -391,7 +566,7 @@
       <span class="nav-icon">🗺️</span>
       <span class="nav-label">טיול</span>
     </button>
-    <button class="nav-item active" data-view="map" title="מפה">
+    <button class="nav-item" data-view="map" title="מפה">
       <span class="nav-icon">📍</span>
       <span class="nav-label">מפה</span>
     </button>
