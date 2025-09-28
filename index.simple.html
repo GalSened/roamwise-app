@@ -68,7 +68,8 @@
     /* Main content */
     .app-main {
       flex: 1;
-      padding: 2rem 1rem;
+      padding: 2rem 1rem 5rem 1rem;
+      overflow-y: auto;
     }
     
     .app-view {
@@ -321,10 +322,17 @@
     
     /* Navigation */
     .bottom-nav {
-      display: flex;
+      display: flex !important;
       background: white;
       box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
       padding: 0.5rem;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      max-width: 1200px;
+      margin: 0 auto;
     }
     
     .nav-btn {
@@ -636,5 +644,69 @@
 
   <!-- JavaScript -->
   <script type="module" src="app-main.js"></script>
+  
+  <!-- Inline navigation fix for immediate functionality -->
+  <script>
+    console.log('Navigation fallback loading...');
+    
+    // Simple navigation function
+    function setupNavigation() {
+      console.log('Setting up navigation fallback...');
+      
+      const navButtons = document.querySelectorAll('.nav-btn');
+      const views = document.querySelectorAll('.app-view');
+      
+      console.log('Found nav buttons:', navButtons.length);
+      console.log('Found views:', views.length);
+      
+      // Function to show a specific view
+      function showView(viewName) {
+        console.log('Showing view:', viewName);
+        
+        // Hide all views
+        views.forEach(view => {
+          view.classList.remove('active');
+          view.style.display = 'none';
+        });
+        
+        // Show target view
+        const targetView = document.querySelector(`[data-view="${viewName}"]`);
+        if (targetView) {
+          targetView.classList.add('active');
+          targetView.style.display = 'block';
+          console.log('View activated:', viewName);
+        } else {
+          console.error('View not found:', viewName);
+        }
+        
+        // Update navigation buttons
+        navButtons.forEach(button => {
+          button.classList.remove('active');
+          if (button.getAttribute('data-view') === viewName) {
+            button.classList.add('active');
+          }
+        });
+      }
+      
+      // Add click listeners to navigation buttons
+      navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const targetView = button.getAttribute('data-view');
+          console.log('Navigation clicked:', targetView);
+          showView(targetView);
+        });
+      });
+      
+      // Show search view by default
+      showView('search');
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupNavigation);
+    } else {
+      setupNavigation();
+    }
+  </script>
 </body>
 </html>
