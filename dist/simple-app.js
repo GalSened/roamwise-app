@@ -338,4 +338,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-console.log('Simple app loaded');
+console.log('Simple app loaded');// Force update יום א׳ ספט׳ 28 2025 14:03:23 IDT
