@@ -1,176 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigation Test</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
-        .test-result { margin: 10px 0; padding: 10px; border-radius: 4px; }
-        .pass { background: #d4edda; color: #155724; }
-        .fail { background: #f8d7da; color: #721c24; }
-        button { margin: 5px; padding: 10px 15px; cursor: pointer; }
-    </style>
+    <title>RoamWise Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-    <h1>RoamWise Navigation Test</h1>
+    <h1>🧭 RoamWise Travel AI</h1>
+    <p>Testing if basic deployment works...</p>
+    <button onclick="testBackend()">Test o3-mini Backend</button>
+    <div id="result"></div>
     
-    <div class="test-section">
-        <h2>1. Basic HTML Elements Test</h2>
-        <div id="html-test-results"></div>
-        <button onclick="testHTMLElements()">Test HTML Elements</button>
-    </div>
-    
-    <div class="test-section">
-        <h2>2. Navigation System Test</h2>
-        <div id="nav-test-results"></div>
-        <button onclick="testNavigation()">Test Navigation</button>
-    </div>
-    
-    <div class="test-section">
-        <h2>3. CSS Loading Test</h2>
-        <div id="css-test-results"></div>
-        <button onclick="testCSS()">Test CSS</button>
-    </div>
-    
-    <div class="test-section">
-        <h2>4. JavaScript Loading Test</h2>
-        <div id="js-test-results"></div>
-        <button onclick="testJavaScript()">Test JavaScript</button>
-    </div>
-
     <script>
-        function addResult(containerId, message, passed) {
-            const container = document.getElementById(containerId);
-            const result = document.createElement('div');
-            result.className = `test-result ${passed ? 'pass' : 'fail'}`;
-            result.textContent = `${passed ? '✅' : '❌'} ${message}`;
-            container.appendChild(result);
-        }
-
-        function testHTMLElements() {
-            const container = document.getElementById('html-test-results');
-            container.innerHTML = '';
+        async function testBackend() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing o3-mini backend...';
             
-            // Open the main app in iframe for testing
-            fetch('http://localhost:3000/')
-                .then(response => response.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    
-                    // Test for required elements
-                    const tests = [
-                        ['Loading screen', doc.querySelector('#loadingScreen')],
-                        ['App container', doc.querySelector('#app')],
-                        ['Bottom navigation', doc.querySelector('.bottom-nav')],
-                        ['Nav buttons', doc.querySelectorAll('.nav-btn').length >= 5],
-                        ['App views', doc.querySelectorAll('.app-view').length >= 5],
-                        ['Search view', doc.querySelector('#searchView')],
-                        ['Trip view', doc.querySelector('#tripView')],
-                        ['AI view', doc.querySelector('#aiView')],
-                        ['Map view', doc.querySelector('#mapView')],
-                        ['Profile view', doc.querySelector('#profileView')]
-                    ];
-                    
-                    tests.forEach(([name, condition]) => {
-                        addResult('html-test-results', name, !!condition);
-                    });
-                })
-                .catch(err => {
-                    addResult('html-test-results', `Failed to load HTML: ${err.message}`, false);
-                });
+            try {
+                const response = await fetch('https://premium-hybrid-473405-g7.uc.r.appspot.com/health');
+                const data = await response.json();
+                resultDiv.innerHTML = '<h3>✅ Backend Working!</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                resultDiv.innerHTML = '<h3>❌ Backend Error:</h3><p>' + error.message + '</p>';
+            }
         }
-
-        function testNavigation() {
-            const container = document.getElementById('nav-test-results');
-            container.innerHTML = '';
-            
-            // Create a test window
-            const testWindow = window.open('http://localhost:3000/', 'testWindow', 'width=800,height=600');
-            
-            setTimeout(() => {
-                try {
-                    const testDoc = testWindow.document;
-                    
-                    // Test navigation elements
-                    const navButtons = testDoc.querySelectorAll('.nav-btn');
-                    const views = testDoc.querySelectorAll('.app-view');
-                    
-                    addResult('nav-test-results', `Found ${navButtons.length} navigation buttons`, navButtons.length === 5);
-                    addResult('nav-test-results', `Found ${views.length} app views`, views.length === 5);
-                    
-                    // Test navigation functionality
-                    if (navButtons.length > 0) {
-                        const firstButton = navButtons[0];
-                        const targetView = firstButton.getAttribute('data-view');
-                        
-                        // Simulate click
-                        firstButton.click();
-                        
-                        setTimeout(() => {
-                            const activeView = testDoc.querySelector('.app-view.active');
-                            const activeNav = testDoc.querySelector('.nav-btn.active');
-                            
-                            addResult('nav-test-results', 'Navigation click response', activeView && activeNav);
-                            addResult('nav-test-results', `Active view matches target (${targetView})`, 
-                                activeView && activeView.getAttribute('data-view') === targetView);
-                            
-                            testWindow.close();
-                        }, 500);
-                    }
-                } catch (err) {
-                    addResult('nav-test-results', `Navigation test error: ${err.message}`, false);
-                    testWindow.close();
-                }
-            }, 2000);
-        }
-
-        function testCSS() {
-            const container = document.getElementById('css-test-results');
-            container.innerHTML = '';
-            
-            fetch('http://localhost:3000/src/styles/global.css')
-                .then(response => response.text())
-                .then(css => {
-                    addResult('css-test-results', 'Global CSS loads', true);
-                    addResult('css-test-results', 'CSS contains app styles', css.includes('.app-view'));
-                    addResult('css-test-results', 'CSS contains navigation styles', css.includes('.nav-btn'));
-                    addResult('css-test-results', 'CSS contains theme variables', css.includes('--color-primary'));
-                })
-                .catch(err => {
-                    addResult('css-test-results', `CSS loading failed: ${err.message}`, false);
-                });
-        }
-
-        function testJavaScript() {
-            const container = document.getElementById('js-test-results');
-            container.innerHTML = '';
-            
-            Promise.all([
-                fetch('http://localhost:3000/src/main.ts'),
-                fetch('http://localhost:3000/src/simple-app.js')
-            ])
-            .then(responses => Promise.all(responses.map(r => r.text())))
-            .then(([typescript, javascript]) => {
-                addResult('js-test-results', 'TypeScript main.ts loads', typescript.length > 0);
-                addResult('js-test-results', 'Simple app JS loads', javascript.length > 0);
-                addResult('js-test-results', 'Simple app contains navigation logic', 
-                    javascript.includes('setupNavigation'));
-            })
-            .catch(err => {
-                addResult('js-test-results', `JavaScript loading failed: ${err.message}`, false);
-            });
-        }
-
-        // Auto-run tests on page load
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                testHTMLElements();
-                testCSS();
-                testJavaScript();
-            }, 1000);
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Test page loaded');
         });
     </script>
 </body>

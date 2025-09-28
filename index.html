@@ -7,9 +7,9 @@
   <meta name="description" content="Smart travel planning with weather-aware routing, voice AI, and in-app navigation">
   
   <!-- PWA -->
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="/roamwise-app/assets/manifest-Qjbj4KpC.webmanifest">
   <meta name="theme-color" content="#0066cc">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/roamwise-app/assets/icon-192-CLv5rkj_.png">
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -89,7 +89,11 @@
       font-size: 1rem;
     }
   </style>
-</head>
+  <script type="module" crossorigin src="/roamwise-app/assets/index-BGE77Ti_.js"></script>
+  <link rel="stylesheet" crossorigin href="/roamwise-app/assets/index-DZ3FuSnl.css">
+  <script type="module">import.meta.url;import("_").catch(()=>1);(async function*(){})().next();if(location.protocol!="file:"){window.__vite_is_modern_browser=true}</script>
+  <script type="module">!function(){if(window.__vite_is_modern_browser)return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("vite-legacy-polyfill"),n=document.createElement("script");n.src=e.src,n.onload=function(){System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))},document.body.appendChild(n)}();</script>
+<link rel="manifest" href="/roamwise-app/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/roamwise-app/registerSW.js"></script></head>
 <body>
   <!-- Loading Screen -->
   <div id="loadingScreen" class="loading-screen">
@@ -149,7 +153,13 @@
           </div>
         </div>
         
-        <div id="list" class="search-results"></div>
+        <div id="list" class="search-results">
+          <div class="search-result">
+            <h3>🔍 Ready to Search</h3>
+            <p>Enter what you're looking for above and our AI will find personalized recommendations!</p>
+            <div class="result-rating">🤖 Powered by o3-mini Personal AI</div>
+          </div>
+        </div>
       </section>
 
       <!-- Trip Planning View -->
@@ -194,7 +204,22 @@
           </button>
         </div>
         
-        <div id="enhancedTripDisplay" class="trip-results" style="display: none;"></div>
+        <div id="enhancedTripDisplay" class="trip-results">
+          <div class="trip-result">
+            <h3>🗺️ AI Trip Planning</h3>
+            <p>Configure your preferences above and generate a personalized itinerary!</p>
+            <div class="trip-summary">
+              <div class="trip-stat">
+                <span class="stat-label">AI Model:</span>
+                <span class="stat-value">o3-mini</span>
+              </div>
+              <div class="trip-stat">
+                <span class="stat-label">Status:</span>
+                <span class="stat-value">Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- AI Assistant View -->
@@ -306,24 +331,39 @@
   </div>
 
   <!-- Scripts -->
-  <script type="module" src="/src/main.ts"></script>
-  <script src="/src/simple-app.js"></script>
+  <script src="/roamwise-app/app-main.js"></script>
   
   <script>
     // Show app when loaded and hide loading screen
     document.addEventListener('DOMContentLoaded', () => {
+      console.log('DOM loaded, starting app...');
       setTimeout(() => {
+        console.log('Showing app...');
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         document.body.classList.add('loaded');
-      }, 1500);
+      }, 800); // Reduced from 1500ms
     });
     
     // Error handling
-    window.addEventListener('error', () => {
+    window.addEventListener('error', (e) => {
+      console.error('App error:', e);
       document.getElementById('loadingScreen').style.display = 'none';
       document.getElementById('errorScreen').style.display = 'flex';
     });
+    
+    // Fallback - force show app after 3 seconds regardless
+    setTimeout(() => {
+      if (document.getElementById('app').style.display === 'none') {
+        console.log('Fallback: forcing app to show');
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        document.body.classList.add('loaded');
+      }
+    }, 3000);
   </script>
+  <script nomodule>!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();</script>
+  <script nomodule crossorigin id="vite-legacy-polyfill" src="/roamwise-app/assets/polyfills-legacy-DEfmcKBM.js"></script>
+  <script nomodule crossorigin id="vite-legacy-entry" data-src="/roamwise-app/assets/index-legacy-D64MnHcr.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>
 </body>
-</html>
+</html><!-- Force rebuild 1759058260 -->
