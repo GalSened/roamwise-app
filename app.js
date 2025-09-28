@@ -1,4 +1,4 @@
-// RoamWise — app.js (with Weather card & compare)
+// traveling — app.js (with Weather card & compare)
 const PROXY = "https://roamwise-proxy-971999716773.us-central1.run.app"; // e.g. https://roamwise-proxy-xxxxx.a.run.app
 
 // Leaflet map
@@ -1330,11 +1330,15 @@ function initProfileFeatures() {
 // Initialize mobile features when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   initMobileNavigation();
+  initThemeToggle();
+  initAnimations();
   initMobileGestures();
   initMobileLocationServices();
   initQuickSearch();
   initMobileCategoryCards();
   initProfileFeatures();
+  initPerformanceMonitoring();
+  initEnhancedGestures();
 });
 
 // Service Worker registration for PWA
@@ -1354,3 +1358,220 @@ if ('serviceWorker' in navigator) {
 document.addEventListener('keydown', (e)=>{
   if (e.key === 'k' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); ui.freeText.focus(); }
 });
+
+// ✨ ENHANCED UI/UX FEATURES
+
+// Theme Toggle Functionality
+function initThemeToggle() {
+  const themeToggle = document.getElementById('themeToggle');
+  if (!themeToggle) return;
+  
+  // Check for saved theme preference or default to 'light'
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  
+  if (currentTheme === 'light') {
+    themeToggle.classList.add('light');
+  }
+  
+  themeToggle.addEventListener('click', () => {
+    const isLight = themeToggle.classList.contains('light');
+    
+    if (isLight) {
+      themeToggle.classList.remove('light');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      themeToggle.classList.add('light');
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    }
+    
+    // Add haptic feedback
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10);
+    }
+  });
+}
+
+// Animation System
+function initAnimations() {
+  // Intersection Observer for scroll-triggered animations
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+  
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate-in');
+      }
+    });
+  }, observerOptions);
+  
+  // Observe all animatable elements
+  document.querySelectorAll('.stagger-item, .card, .interactive').forEach(el => {
+    observer.observe(el);
+  });
+  
+  // Add ripple effect to buttons
+  document.querySelectorAll('.ripple').forEach(button => {
+    button.addEventListener('click', createRipple);
+  });
+  
+  // Preload animations for better performance
+  document.body.classList.add('animations-ready');
+}
+
+// Ripple Effect
+function createRipple(event) {
+  const button = event.currentTarget;
+  const ripple = document.createElement('span');
+  const rect = button.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const x = event.clientX - rect.left - size / 2;
+  const y = event.clientY - rect.top - size / 2;
+  
+  ripple.style.width = ripple.style.height = size + 'px';
+  ripple.style.left = x + 'px';
+  ripple.style.top = y + 'px';
+  ripple.classList.add('ripple-effect');
+  
+  button.appendChild(ripple);
+  
+  setTimeout(() => {
+    ripple.remove();
+  }, 600);
+}
+
+// Enhanced Loading States
+function showLoadingState(element, type = 'spinner') {
+  const loadingHTML = {
+    spinner: '<div class="loading-spinner"></div>',
+    skeleton: '<div class="loading-skeleton" style="height: 20px; margin: 8px 0;"></div>'.repeat(3),
+    dots: '<div class="loading-dots"></div>'
+  };
+  
+  element.classList.add('loading');
+  element.innerHTML = loadingHTML[type];
+}
+
+function hideLoadingState(element, content = '') {
+  element.classList.remove('loading');
+  element.innerHTML = content;
+}
+
+// Enhanced Error Handling with Animation
+function showError(message, container = document.body) {
+  const errorElement = document.createElement('div');
+  errorElement.className = 'error-state';
+  errorElement.textContent = message;
+  errorElement.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    padding: 16px 24px;
+    border-radius: 12px;
+    max-width: 300px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  `;
+  
+  container.appendChild(errorElement);
+  
+  setTimeout(() => {
+    errorElement.style.animation = 'fadeInUp 0.3s reverse';
+    setTimeout(() => errorElement.remove(), 300);
+  }, 3000);
+}
+
+// Enhanced Success States
+function showSuccess(message, container = document.body) {
+  const successElement = document.createElement('div');
+  successElement.className = 'success-state';
+  successElement.textContent = message;
+  successElement.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    padding: 16px 24px;
+    border-radius: 12px;
+    max-width: 300px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  `;
+  
+  container.appendChild(successElement);
+  
+  setTimeout(() => {
+    successElement.style.animation = 'fadeInUp 0.3s reverse';
+    setTimeout(() => successElement.remove(), 300);
+  }, 3000);
+}
+
+// Performance Monitoring
+function initPerformanceMonitoring() {
+  // Monitor Core Web Vitals
+  if ('web-vital' in window) {
+    window.webVitals.getCLS(console.log);
+    window.webVitals.getFID(console.log);
+    window.webVitals.getLCP(console.log);
+  }
+  
+  // Monitor memory usage
+  if ('memory' in performance) {
+    const memory = performance.memory;
+    console.log('Memory usage:', {
+      used: Math.round(memory.usedJSHeapSize / 1048576) + 'MB',
+      total: Math.round(memory.totalJSHeapSize / 1048576) + 'MB',
+      limit: Math.round(memory.jsHeapSizeLimit / 1048576) + 'MB'
+    });
+  }
+}
+
+// Enhanced Mobile Gestures
+function initEnhancedGestures() {
+  let startX, startY, deltaX, deltaY;
+  let isScrolling = false;
+  
+  document.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isScrolling = false;
+  }, { passive: true });
+  
+  document.addEventListener('touchmove', (e) => {
+    if (!startX || !startY) return;
+    
+    deltaX = e.touches[0].clientX - startX;
+    deltaY = e.touches[0].clientY - startY;
+    
+    // Determine if user is scrolling
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      isScrolling = true;
+    }
+    
+    // Add pull-to-refresh gesture
+    if (deltaY > 100 && !isScrolling && window.scrollY === 0) {
+      document.body.classList.add('pull-to-refresh');
+    }
+  }, { passive: true });
+  
+  document.addEventListener('touchend', () => {
+    document.body.classList.remove('pull-to-refresh');
+    
+    if (!isScrolling && Math.abs(deltaX) > 50) {
+      // Handle swipe gestures
+      if (deltaX > 0) {
+        // Swipe right
+        console.log('Swipe right detected');
+      } else {
+        // Swipe left  
+        console.log('Swipe left detected');
+      }
+    }
+    
+    startX = startY = null;
+  }, { passive: true });
+}

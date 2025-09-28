@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RoamWise — מדריך הטיולים החכם שלך</title>
+<title>traveling — מדריך הטיולים החכם שלך</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0066cc">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,10 +18,11 @@
 <header class="appbar" role="banner">
   <div class="brand">
     <div class="logo">🧭</div>
-    <div class="title">RoamWise</div>
+    <div class="title">traveling</div>
   </div>
   <nav class="actions" aria-label="פעולות ראשיות">
-    <button id="installBtn" class="ghost">התקן אפליקציה</button>
+    <div class="theme-toggle" id="themeToggle" title="החלף ערכת נושא"></div>
+    <button id="installBtn" class="ghost ripple">התקן אפליקציה</button>
   </nav>
 </header>
 
@@ -33,7 +34,7 @@
     
     <!-- Clear Location Button -->
     <div class="fab-container">
-      <button id="locationFab" class="fab primary" title="הראה את המיקום שלי">
+      <button id="locationFab" class="fab primary bounce-on-hover float will-change-transform" title="הראה את המיקום שלי">
         <span>📍</span>
         <span class="fab-label">המיקום שלי</span>
       </button>
@@ -66,22 +67,22 @@
       <section class="card highlight-card">
         <h3 class="section-title">מה אתה מחפש?</h3>
         <div class="category-grid">
-          <button class="category-card featured" data-preset="food">
+          <button class="category-card featured stagger-item interactive touch-feedback" data-preset="food">
             <span class="category-icon">🍽️</span>
             <span class="category-label">מסעדות ואוכל</span>
             <span class="category-desc">מקומות טעימים</span>
           </button>
-          <button class="category-card featured" data-preset="viewpoints">
+          <button class="category-card featured stagger-item interactive touch-feedback" data-preset="viewpoints">
             <span class="category-icon">🌄</span>
             <span class="category-label">נופים יפים</span>
             <span class="category-desc">תצפיות וטבע</span>
           </button>
-          <button class="category-card featured" data-preset="activities">
+          <button class="category-card featured stagger-item interactive touch-feedback" data-preset="activities">
             <span class="category-icon">🎯</span>
             <span class="category-label">פעילויות</span>
             <span class="category-desc">בידור ושעשועים</span>
           </button>
-          <button class="category-card featured" data-preset="coffee">
+          <button class="category-card featured stagger-item interactive touch-feedback" data-preset="coffee">
             <span class="category-icon">☕</span>
             <span class="category-label">קפה ומתוק</span>
             <span class="category-desc">בתי קפה וקינוחים</span>
