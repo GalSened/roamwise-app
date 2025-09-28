@@ -38,7 +38,7 @@ body{
 }
 #sidebar{padding:12px; overflow:auto; border-inline-end:1px solid var(--border); background: linear-gradient(180deg, rgba(16,20,26,.65), rgba(16,20,26,.35));}
 #mapPane{position:relative}
-#map{position:absolute; inset:0}
+#map{position:absolute; inset:0; height:100%; width:100%; z-index:1}
 
 .card{
   background: linear-gradient(180deg, rgba(17,24,35,.9), rgba(17,24,35,.75));
