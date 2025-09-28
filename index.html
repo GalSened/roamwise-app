@@ -88,6 +88,21 @@
       cursor: pointer;
       font-size: 1rem;
     }
+    
+    /* Force active views to be visible - fix for blank pages */
+    .app-view.active {
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: translate(0) !important;
+      display: block !important;
+    }
+    
+    /* Ensure search view shows by default */
+    #searchView {
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: translate(0) !important;
+    }
   </style>
   <script type="module" crossorigin src="assets/index-BGE77Ti_.js"></script>
   <link rel="stylesheet" crossorigin href="assets/index-DZ3FuSnl.css">
@@ -342,6 +357,15 @@
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         document.body.classList.add('loaded');
+        
+        // Force show search view
+        const searchView = document.getElementById('searchView');
+        if (searchView) {
+          searchView.style.opacity = '1';
+          searchView.style.visibility = 'visible';
+          searchView.style.transform = 'translate(0)';
+          console.log('Force-showed search view');
+        }
       }, 800); // Reduced from 1500ms
     });
     
