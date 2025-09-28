@@ -1,0 +1,96 @@
+/* RoamWise — styles */
+:root{
+  --bg:#0b0b0f;
+  --panel:#10141a;
+  --card:#111823;
+  --muted:#9aa4b2;
+  --text:#e8eef7;
+  --accent:#66dbb7;
+  --focus:#7aa2ff;
+  --border:rgba(255,255,255,0.08);
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{height:100%;}
+body{
+  margin:0;
+  font-family:'Rubik',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  background: radial-gradient(1200px 600px at 80% -10%, #182038 0%, rgba(24,32,56,0) 60%), var(--bg);
+  color:var(--text);
+}
+.appbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; border-bottom:1px solid var(--border); backdrop-filter: blur(10px);
+  background: linear-gradient(180deg, rgba(16,20,26,.7), rgba(16,20,26,.4));
+  position:sticky; top:0; z-index:10;
+}
+.brand{display:flex; gap:10px; align-items:center}
+.logo{width:32px;height:32px;display:grid;place-items:center;background:#1a2233;border-radius:8px;box-shadow:var(--shadow)}
+.title{font-weight:700; letter-spacing:.3px}
+.actions a,.actions .ghost{color:var(--text); text-decoration:none; padding:8px 12px; border:1px solid var(--border); border-radius:10px; background:transparent}
+.actions .ghost:hover{border-color:var(--focus)}
+
+.layout{
+  display:grid; grid-template-columns: 380px 1fr; height:calc(100vh - 56px);
+}
+@media (max-width: 980px){
+  .layout{ grid-template-columns:1fr; grid-template-rows: 52vh 1fr; }
+}
+#sidebar{padding:12px; overflow:auto; border-inline-end:1px solid var(--border); background: linear-gradient(180deg, rgba(16,20,26,.65), rgba(16,20,26,.35));}
+#mapPane{position:relative}
+#map{position:absolute; inset:0}
+
+.card{
+  background: linear-gradient(180deg, rgba(17,24,35,.9), rgba(17,24,35,.75));
+  border:1px solid var(--border);
+  border-radius:16px; padding:12px; margin:10px 0;
+  box-shadow: var(--shadow);
+}
+.row{display:flex; gap:10px; align-items:center}
+.row.wrap{flex-wrap:wrap}
+.row.space{justify-content:space-between; align-items:center}
+
+button{
+  padding:10px 14px; border-radius:12px; border:1px solid var(--border);
+  background:#141b28; color:var(--text); cursor:pointer;
+  transition: .2s transform ease, .2s background ease, .2s border-color ease;
+}
+button:hover{transform: translateY(-1px); border-color:var(--focus)}
+button:focus-visible{outline: 2px solid var(--focus); outline-offset:2px}
+button.primary{background: linear-gradient(180deg, #1e2b46, #152036); border-color:#1e2b46}
+button.primary:hover{border-color:var(--accent);}
+
+label{font-size:14px}
+input[type="text"], select{
+  width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#0f1521; color:var(--text);
+}
+input::placeholder{color:#718096}
+.small{font-size:12px}
+.muted{color:var(--muted)}
+
+.chips{display:flex; gap:8px; flex-wrap:wrap}
+.chips button{background:#0f1521}
+
+.check{display:flex; gap:6px; align-items:center}
+
+.result{padding:12px; border:1px solid var(--border); border-radius:14px; margin:10px 0; background:#0f1521}
+.result h3{margin:0 0 6px; font-size:16px}
+.pill{padding:2px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px; color:var(--muted)}
+
+.ac{border:1px solid var(--border); border-radius:12px; background:#0f1521; max-height:220px; overflow:auto; margin-top:6px}
+.ac button{display:block; width:100%; text-align:right; padding:10px 12px; background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,.05)}
+.ac button:last-child{border-bottom:none}
+.ac button:hover{background:#141b28}
+
+.skel{
+  height:82px; border-radius:14px; background: linear-gradient(90deg,#0f1521 0%, #131b2a 40%, #0f1521 80%);
+  background-size: 200% 100%; animation: shimmer 1.2s infinite linear; margin:8px 0; border:1px solid var(--border);
+}
+@keyframes shimmer{ 0%{background-position: 200% 0} 100%{background-position: -200% 0} }
+
+.wx-big{font-size:28px; font-weight:700; margin-bottom:2px}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce){
+  *{transition:none!important; animation:none!important}
+}

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RoamWise — מסלולים וחיפושים חכמים</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b0b0f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="appbar" role="banner">
+  <div class="brand">
+    <div class="logo">🧭</div>
+    <div class="title">RoamWise</div>
+  </div>
+  <nav class="actions" aria-label="פעולות ראשיות">
+    <button id="installBtn" class="ghost" aria-label="התקנה">התקנה</button>
+    <a href="https://github.com/" target="_blank" class="ghost" aria-label="גיטהאב">GitHub</a>
+  </nav>
+</header>
+
+<main id="app" class="layout" role="main">
+  <aside id="sidebar" class="panel" aria-label="לוח בקרה">
+    <section id="weatherCard" class="card" aria-live="polite">
+      <div class="row space">
+        <b>☁️ מזג אוויר כאן</b>
+        <button id="wxRefresh" title="רענן">רענן</button>
+      </div>
+      <div class="row" style="gap:16px; align-items:flex-end">
+        <div>
+          <div id="wxTemp" class="wx-big">—°</div>
+          <div id="wxDesc" class="muted small">מחכה למיקום…</div>
+        </div>
+        <div class="pill" id="wxHiLo">H:—° · L:—°</div>
+      </div>
+      <div id="wxNext" class="muted small" style="margin-top:6px">—</div>
+    </section>
+
+    <section class="card">
+      <div class="field">
+        <label for="intent"><b>מה מחפשים היום?</b></label>
+        <select id="intent" aria-label="בחירת סוג חיפוש">
+          <option value="route">מסלול</option>
+          <option value="food">אוכל/מסעדה</option>
+          <option value="pizza" selected>פיצה</option>
+          <option value="gelato">גלידה</option>
+          <option value="viewpoints">נוף/תצפיות</option>
+          <option value="activities">פעילויות</option>
+        </select>
+      </div>
+    </section>
+
+    <section id="chatBox" class="card">
+      <div class="field">
+        <label for="freeText"><b>שורת חיפוש בשפה חופשית</b></label>
+        <input id="freeText" type="text" placeholder="דבר חופשי: 'גלידה עם נוף לאגם' / 'מסלול לתחנה המרכזית'" aria-label="טקסט חופשי">
+      </div>
+      <div class="row">
+        <button id="thinkBtn" class="primary">בקש מ-RoamWise להבין</button>
+        <span id="thinkStatus" class="muted small"></span>
+      </div>
+    </section>
+
+    <section id="routeBox" class="card" hidden>
+      <div class="field">
+        <label for="travelMode">איך נוסעים?</label>
+        <select id="travelMode" aria-label="מצב נסיעה">
+          <option value="driving" selected>🚗 רכב</option>
+          <option value="transit">🚆 תחבורה ציבורית</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="dest">לאן נוסעים?</label>
+        <input id="dest" type="text" placeholder="Sirmione / Verona …" autocomplete="off" aria-autocomplete="list" aria-label="יעד">
+      </div>
+      <div id="acList" class="ac" role="listbox" hidden></div>
+      <div class="row">
+        <button class="primary" id="goRouteBtn">חשב מסלול</button>
+        <span id="routeMeta" class="muted small"></span>
+      </div>
+      <label class="check" style="margin-top:6px">
+        <input type="checkbox" id="wxCheck" checked>
+        בדוק מזג אוויר במסלול
+      </label>
+      <div id="wxAdvice" class="muted small" style="margin-top:6px"></div>
+      <div id="routeLinks" class="row" hidden>
+        <button id="routeGmapsBtn">פתח בגוגל</button>
+        <button id="routeWazeBtn">פתח ב-Waze</button>
+      </div>
+    </section>
+
+    <section id="placeBox" class="card">
+      <div class="chips" role="group" aria-label="בחירת קטגוריה מהירה">
+        <button data-preset="pizza" title="פיצה">🍕 פיצה</button>
+        <button data-preset="gelato" title="גלידה">🍨 גלידה</button>
+        <button data-preset="food"   title="אוכל">🍽️ אוכל</button>
+        <button data-preset="viewpoints" title="נוף">🌄 נוף</button>
+        <button data-preset="activities" title="פעילויות">🎯 פעילויות</button>
+      </div>
+      <div id="activitiesFilters" class="chips" hidden>
+        <button data-activity="water">🛶 מים</button>
+        <button data-activity="hike">🚶‍♂️ הליכה</button>
+        <button data-activity="bike">🚴‍♀️ אופניים</button>
+        <button data-activity="museum">🏛️ מוזיאון</button>
+        <button data-activity="park">🏞️ פארק/חוף</button>
+        <button data-activity="amusement">🎢 שעשועים</button>
+        <button data-activity="spa">♨️ ספא</button>
+        <button data-activity="kids">🧒 ילדים</button>
+      </div>
+      <div class="row wrap">
+        <label class="check"><input type="checkbox" id="openNow" checked> פתוח עכשיו</label>
+        <label class="small">רדיוס:
+          <select id="radius">
+            <option value="2000">2 ק״מ</option>
+            <option value="4000" selected>4 ק״מ</option>
+            <option value="7000">7 ק״מ</option>
+            <option value="12000">12 ק״מ</option>
+          </select>
+        </label>
+        <label class="small">מינ’ דירוג:
+          <select id="minRating">
+            <option>0</option><option>3.5</option><option selected>4.2</option><option>4.5</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <button class="primary" id="searchBtn">חפש סביבי</button>
+        <span id="status" class="muted small"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row space">
+        <b>⭐ מועדפים</b>
+        <span class="muted small">(נשמר מקומית)</span>
+      </div>
+      <div id="favList" class="muted small">אין מועדפים עדיין</div>
+    </section>
+
+    <section id="list" class="card" aria-live="polite">
+      <div class="muted small">התוצאות יופיעו כאן…</div>
+    </section>
+  </aside>
+
+  <section id="mapPane">
+    <div id="map" role="application" aria-label="מפה"></div>
+  </section>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
