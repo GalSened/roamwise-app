@@ -41,6 +41,47 @@
       <div id="wxNext" class="muted small" style="margin-top:6px">—</div>
     </section>
 
+    <!-- AI Personalization Dashboard -->
+    <section id="aiCard" class="card ai-card">
+      <div class="row space">
+        <b>🤖 RoamWise AI</b>
+        <button id="aiToggle" class="ghost small" title="הגדרות AI">⚙️</button>
+      </div>
+      
+      <!-- Mood Selector -->
+      <div class="field">
+        <label for="moodSelect"><b>איך אתה מרגיש היום?</b></label>
+        <select id="moodSelect" aria-label="בחירת מצב רוח">
+          <option value="neutral">רגיל</option>
+          <option value="adventurous">הרפתקני</option>
+          <option value="relaxed">רגוע</option>
+          <option value="social">חברותי</option>
+          <option value="romantic">רומנטי</option>
+          <option value="hungry">רעב</option>
+          <option value="curious">סקרן</option>
+        </select>
+      </div>
+
+      <!-- Voice Interface -->
+      <div class="field">
+        <div class="row space">
+          <button id="voiceBtn" class="primary ai-voice">🎤 דבר עם RoamWise</button>
+          <button id="voiceHelpBtn" class="ghost small" title="עזרה בשימוש בקול">❓</button>
+        </div>
+        <span id="voiceStatus" class="muted small"></span>
+        <div id="voiceResponse" class="ai-response" hidden></div>
+      </div>
+
+      <!-- AI Recommendations -->
+      <div class="field">
+        <button id="aiRecommendBtn" class="secondary full-width">✨ קבל המלצות מותאמות אישית</button>
+        <div id="aiRecommendations" class="ai-recommendations" hidden></div>
+      </div>
+
+      <!-- Smart Notifications -->
+      <div id="smartNotifications" class="notifications" hidden></div>
+    </section>
+
     <section class="card">
       <div class="field">
         <label for="intent"><b>מה מחפשים היום?</b></label>

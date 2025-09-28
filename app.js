@@ -35,7 +35,17 @@ const ui = {
   wxDesc: document.getElementById('wxDesc'),
   wxHiLo: document.getElementById('wxHiLo'),
   wxNext: document.getElementById('wxNext'),
-  wxRefresh: document.getElementById('wxRefresh')
+  wxRefresh: document.getElementById('wxRefresh'),
+  // AI Elements
+  moodSelect: document.getElementById('moodSelect'),
+  voiceBtn: document.getElementById('voiceBtn'),
+  voiceStatus: document.getElementById('voiceStatus'),
+  voiceResponse: document.getElementById('voiceResponse'),
+  aiRecommendBtn: document.getElementById('aiRecommendBtn'),
+  aiRecommendations: document.getElementById('aiRecommendations'),
+  smartNotifications: document.getElementById('smartNotifications'),
+  aiToggle: document.getElementById('aiToggle'),
+  voiceHelpBtn: document.getElementById('voiceHelpBtn')
 };
 
 // PWA install prompt
@@ -74,6 +84,13 @@ ui.searchBtn.addEventListener('click', doPlaces);
 ui.goRouteBtn.addEventListener('click', doRoute);
 ui.dest.addEventListener('input', debounce(doAutocomplete, 250));
 ui.thinkBtn.addEventListener('click', doThink);
+
+// AI Event Listeners
+ui.voiceBtn.addEventListener('click', startVoiceInput);
+ui.aiRecommendBtn.addEventListener('click', getAIRecommendations);
+ui.moodSelect.addEventListener('change', onMoodChange);
+ui.aiToggle.addEventListener('click', toggleAISettings);
+ui.voiceHelpBtn.addEventListener('click', showVoiceHelp);
 
 function setIntent(mode){ document.getElementById('intent').value = mode; onIntentChange(); }
 
@@ -335,6 +352,373 @@ async function doThink(){
     ui.thinkStatus.textContent = 'שגיאת NLU';
   }
 }
+
+// --- AI Functionality ---
+let userId = localStorage.getItem('roamwise_user_id') || (() => {
+  const id = 'user_' + Math.random().toString(36).substr(2, 9);
+  localStorage.setItem('roamwise_user_id', id);
+  return id;
+})();
+
+let speechRecognition = null;
+let speechSynthesis = window.speechSynthesis;
+let isListening = false;
+let isSpeaking = false;
+
+// Initialize Speech Recognition
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  speechRecognition = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
+  speechRecognition.continuous = false;
+  speechRecognition.interimResults = false;
+  speechRecognition.lang = 'he-IL';
+
+  speechRecognition.onstart = () => {
+    isListening = true;
+    ui.voiceBtn.classList.add('listening');
+    ui.voiceBtn.textContent = '🎤 מקשיב...';
+    ui.voiceStatus.textContent = 'מקשיב...';
+  };
+
+  speechRecognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    processVoiceInput(transcript);
+  };
+
+  speechRecognition.onerror = (event) => {
+    console.error('Speech recognition error:', event.error);
+    ui.voiceStatus.textContent = 'שגיאה בזיהוי קול';
+    resetVoiceButton();
+  };
+
+  speechRecognition.onend = () => {
+    resetVoiceButton();
+  };
+}
+
+function startVoiceInput() {
+  if (!speechRecognition) {
+    ui.voiceStatus.textContent = 'זיהוי קול לא נתמך בדפדפן זה';
+    return;
+  }
+
+  if (isListening) {
+    speechRecognition.stop();
+    return;
+  }
+
+  try {
+    speechRecognition.start();
+  } catch (error) {
+    console.error('Error starting speech recognition:', error);
+    ui.voiceStatus.textContent = 'שגיאה בהפעלת זיהוי קול';
+  }
+}
+
+function resetVoiceButton() {
+  isListening = false;
+  ui.voiceBtn.classList.remove('listening');
+  ui.voiceBtn.textContent = '🎤 דבר עם RoamWise';
+  if (!isSpeaking) {
+    ui.voiceStatus.textContent = '';
+  }
+}
+
+// Text-to-Speech function
+function speakText(text, lang = 'he-IL') {
+  if (!speechSynthesis) {
+    console.log('Text-to-speech not supported');
+    return;
+  }
+
+  // Stop any current speech
+  speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = lang;
+  utterance.rate = 0.9;
+  utterance.pitch = 1.0;
+  utterance.volume = 0.8;
+
+  utterance.onstart = () => {
+    isSpeaking = true;
+    ui.voiceStatus.textContent = '🔊 RoamWise מדבר...';
+  };
+
+  utterance.onend = () => {
+    isSpeaking = false;
+    if (!isListening) {
+      ui.voiceStatus.textContent = '';
+    }
+  };
+
+  utterance.onerror = (event) => {
+    console.error('Speech synthesis error:', event.error);
+    isSpeaking = false;
+    ui.voiceStatus.textContent = 'שגיאה בדיבור';
+  };
+
+  // Try to find Hebrew voice
+  const voices = speechSynthesis.getVoices();
+  const hebrewVoice = voices.find(voice => voice.lang.includes('he'));
+  if (hebrewVoice) {
+    utterance.voice = hebrewVoice;
+  }
+
+  speechSynthesis.speak(utterance);
+}
+
+async function processVoiceInput(transcript) {
+  ui.voiceStatus.textContent = 'מעבד...';
+  ui.voiceResponse.hidden = false;
+  ui.voiceResponse.textContent = `שמעתי: "${transcript}"`;
+
+  try {
+    const center = map.getCenter();
+    const response = await post('/voice-to-intent', {
+      text: transcript,
+      userId,
+      location: { lat: center.lat, lng: center.lng }
+    });
+
+    ui.voiceResponse.innerHTML = `
+      <div><strong>שמעתי:</strong> "${transcript}"</div>
+      <div><strong>תגובה:</strong> ${response.conversationResponse}</div>
+      <button onclick="speakText('${response.conversationResponse.replace(/'/g, "\\'")}')" class="small secondary" style="margin-top: 8px;">🔊 השמע תגובה</button>
+    `;
+
+    // Automatically speak the response
+    setTimeout(() => speakText(response.conversationResponse), 500);
+
+    // Track the voice interaction
+    await post('/track-interaction', {
+      userId,
+      placeId: 'voice_' + Date.now(),
+      interactionType: 'voice_query',
+      rating: null
+    });
+
+    // If AI recommendations were triggered, display them
+    if (response.actionResult?.recommendations) {
+      displayAIRecommendations(response.actionResult.recommendations, response.actionResult.context);
+      
+      // Speak summary of recommendations
+      const recCount = response.actionResult.recommendations.length;
+      if (recCount > 0) {
+        setTimeout(() => {
+          speakText(`מצאתי ${recCount} המלצות עבורך. בדוק את המסך לפרטים נוספים.`);
+        }, 3000);
+      }
+    }
+
+    ui.voiceStatus.textContent = 'הושלם!';
+  } catch (error) {
+    console.error('Voice processing error:', error);
+    ui.voiceResponse.textContent = 'שגיאה בעיבוד הקול';
+    ui.voiceStatus.textContent = 'שגיאה';
+  }
+}
+
+async function getAIRecommendations() {
+  ui.aiRecommendBtn.textContent = '⏳ מחפש המלצות...';
+  ui.aiRecommendBtn.disabled = true;
+
+  try {
+    const center = map.getCenter();
+    const mood = ui.moodSelect.value;
+    
+    const response = await post('/ai-recommendations', {
+      lat: center.lat,
+      lng: center.lng,
+      userId,
+      mood,
+      timeOfDay: getTimeOfDay(),
+      companionType: 'solo' // Could be enhanced with user input
+    });
+
+    displayAIRecommendations(response.recommendations, response.context);
+    
+    // Track the AI recommendation request
+    await post('/track-interaction', {
+      userId,
+      placeId: 'ai_recommendations_' + Date.now(),
+      interactionType: 'ai_request',
+      rating: null
+    });
+
+    ui.aiRecommendBtn.textContent = '✨ קבל המלצות מותאמות אישית';
+  } catch (error) {
+    console.error('AI recommendations error:', error);
+    ui.aiRecommendations.innerHTML = '<div class="ai-recommendation">שגיאה בטעינת המלצות. נסה שוב.</div>';
+    ui.aiRecommendations.hidden = false;
+    ui.aiRecommendBtn.textContent = '✨ קבל המלצות מותאמות אישית';
+  } finally {
+    ui.aiRecommendBtn.disabled = false;
+  }
+}
+
+function displayAIRecommendations(recommendations, context) {
+  if (!recommendations || recommendations.length === 0) {
+    ui.aiRecommendations.innerHTML = '<div class="ai-recommendation">לא נמצאו המלצות עבור המצב הנוכחי. נסה לשנות את מצב הרוח או המיקום.</div>';
+    ui.aiRecommendations.hidden = false;
+    return;
+  }
+
+  let html = `<div class="ai-context">
+    <strong>🎯 הקשר:</strong> מצב רוח: ${getMoodEmoji(context.mood)}, מזג אוויר: ${Math.round(context.weather?.temperature_2m || 0)}°C
+  </div>`;
+
+  recommendations.forEach(rec => {
+    html += `<div class="ai-recommendation">
+      <h4>${getCategoryEmoji(rec.category)} ${getCategoryName(rec.category)}</h4>
+      <div class="reason">${rec.reason}</div>`;
+    
+    rec.places.forEach(place => {
+      html += `<div class="place" onclick="showPlaceOnMap(${place.lat}, ${place.lng}, '${place.name}')">
+        <div class="place-name">${place.name}</div>
+        <div class="place-details">
+          ${place.rating ? `⭐ ${place.rating}` : ''} 
+          ${place.address ? `• ${place.address}` : ''}
+          ${place.openNow !== undefined ? (place.openNow ? ' • פתוח עכשיו' : ' • סגור עכשיו') : ''}
+        </div>
+      </div>`;
+    });
+    
+    html += '</div>';
+  });
+
+  ui.aiRecommendations.innerHTML = html;
+  ui.aiRecommendations.hidden = false;
+}
+
+function showPlaceOnMap(lat, lng, name) {
+  map.setView([lat, lng], 16);
+  L.marker([lat, lng]).addTo(resultsLayer).bindPopup(name).openPopup();
+}
+
+function getMoodEmoji(mood) {
+  const moods = {
+    neutral: '😐 רגיל',
+    adventurous: '🗺️ הרפתקני', 
+    relaxed: '😌 רגוע',
+    social: '👥 חברותי',
+    romantic: '💕 רומנטי',
+    hungry: '🍽️ רעב',
+    curious: '🔍 סקרן'
+  };
+  return moods[mood] || mood;
+}
+
+function getCategoryEmoji(category) {
+  const categories = {
+    restaurant: '🍽️',
+    tourist_attraction: '🏛️',
+    spa: '🧘',
+    museum: '🏛️',
+    ice_cream: '🍦'
+  };
+  return categories[category] || '📍';
+}
+
+function getCategoryName(category) {
+  const names = {
+    restaurant: 'מסעדות',
+    tourist_attraction: 'אטרקציות',
+    spa: 'ספא ורווחה',
+    museum: 'מוזיאונים',
+    ice_cream: 'גלידה'
+  };
+  return names[category] || category;
+}
+
+function getTimeOfDay() {
+  const hour = new Date().getHours();
+  if (hour >= 6 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 17) return 'afternoon';
+  if (hour >= 17 && hour < 22) return 'evening';
+  return 'night';
+}
+
+function onMoodChange() {
+  // Could trigger automatic recommendations based on mood change
+  const mood = ui.moodSelect.value;
+  console.log('Mood changed to:', mood);
+}
+
+function toggleAISettings() {
+  // Future: Show AI settings panel
+  alert('הגדרות AI - בקרוב!');
+}
+
+function showVoiceHelp() {
+  const helpText = `
+🎤 דוגמאות לפקודות קוליות:
+
+• "אני רוצה גלידה עם נוף יפה"
+• "מצא לי מסעדה רומנטית לארוחת ערב"
+• "איפה יש מוזיאון בקרבת מקום?"
+• "מה יש לעשות פה בגשם?"
+• "אני מחפש משהו הרפתקני"
+• "תכנן לי מסלול לתחנה המרכזית"
+
+הלחץ על כפתור המיקרופון ודבר בעברית! 
+RoamWise יבין אותך ויענה גם בקול.
+  `;
+  
+  ui.voiceResponse.innerHTML = `<div style="white-space: pre-line;">${helpText}</div>`;
+  ui.voiceResponse.hidden = false;
+  
+  speakText('אני RoamWise, העוזר החכם שלך לטיולים. תוכל לדבר איתי בעברית ולבקש המלצות על מקומות, מסעדות ופעילויות. נסה לומר משהו כמו: מצא לי גלידה עם נוף יפה!');
+}
+
+// Smart Notifications
+async function checkSmartNotifications() {
+  try {
+    const center = map.getCenter();
+    const response = await post('/smart-notifications', {
+      userId,
+      location: { lat: center.lat, lng: center.lng },
+      timeContext: { hour: new Date().getHours() }
+    });
+
+    displaySmartNotifications(response.notifications);
+  } catch (error) {
+    console.error('Smart notifications error:', error);
+  }
+}
+
+function displaySmartNotifications(notifications) {
+  if (!notifications || notifications.length === 0) {
+    ui.smartNotifications.hidden = true;
+    return;
+  }
+
+  let html = '';
+  notifications.forEach(notif => {
+    html += `<div class="notification ${notif.priority}">
+      <div class="notification-title">${notif.title}</div>
+      <div class="notification-message">${notif.message}</div>
+      ${notif.action ? `<button class="notification-action" onclick="handleNotificationAction('${notif.action}', ${JSON.stringify(notif.params).replace(/"/g, '&quot;')})">פעל</button>` : ''}
+    </div>`;
+  });
+
+  ui.smartNotifications.innerHTML = html;
+  ui.smartNotifications.hidden = false;
+}
+
+function handleNotificationAction(action, params) {
+  if (action === 'ai_recommendations') {
+    // Set mood if provided and get recommendations
+    if (params.mood) {
+      ui.moodSelect.value = params.mood;
+    }
+    getAIRecommendations();
+  }
+}
+
+// Initialize smart notifications check
+setInterval(checkSmartNotifications, 5 * 60 * 1000); // Every 5 minutes
+// Check immediately after location is obtained
+setTimeout(checkSmartNotifications, 3000);
 
 // --- Weather helpers ---
 async function getWeather(lat, lng){
