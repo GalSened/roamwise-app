@@ -95,13 +95,38 @@
       visibility: visible !important;
       transform: translate(0) !important;
       display: block !important;
+      position: relative !important;
+      z-index: 1 !important;
+      min-height: 200px !important;
     }
     
     /* Ensure search view shows by default */
-    #searchView {
+    #searchView,
+    section[data-view="search"] {
       opacity: 1 !important;
       visibility: visible !important;
       transform: translate(0) !important;
+      display: block !important;
+      position: relative !important;
+      z-index: 1 !important;
+      min-height: 200px !important;
+    }
+    
+    /* Force all search elements to be visible */
+    #searchView .search-form,
+    #searchView .search-input-group,
+    #searchView input,
+    #searchView button {
+      opacity: 1 !important;
+      visibility: visible !important;
+      display: block !important;
+    }
+    
+    /* Override any external CSS that might hide content */
+    .app-main {
+      opacity: 1 !important;
+      visibility: visible !important;
+      display: block !important;
     }
   </style>
   <script type="module" crossorigin src="assets/index-BGE77Ti_.js"></script>
