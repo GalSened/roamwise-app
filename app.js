@@ -58,7 +58,11 @@ const ui = {
   planTripBtn: document.getElementById('planTripBtn'),
   tripPlanStatus: document.getElementById('tripPlanStatus'),
   tripPlanDisplay: document.getElementById('tripPlanDisplay'),
-  liveNavigation: document.getElementById('liveNavigation')
+  liveNavigation: document.getElementById('liveNavigation'),
+  // Profile Elements
+  totalVisits: document.getElementById('totalVisits'),
+  avgRating: document.getElementById('avgRating'),
+  refreshInsights: document.getElementById('refreshInsights')
 };
 
 // PWA install prompt
@@ -1291,6 +1295,38 @@ function showNotification(message, type = 'info', duration = 3000) {
   }, duration);
 }
 
+// Profile functionality
+function initProfileFeatures() {
+  if (ui.refreshInsights) {
+    ui.refreshInsights.addEventListener('click', async () => {
+      try {
+        ui.refreshInsights.disabled = true;
+        ui.refreshInsights.textContent = 'מרענן...';
+        
+        const response = await fetch(`${PROXY}/user-insights`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: getUserId() })
+        });
+        
+        const data = await response.json();
+        
+        if (data.ok && ui.totalVisits && ui.avgRating) {
+          ui.totalVisits.textContent = data.insights.totalVisits || '0';
+          ui.avgRating.textContent = data.insights.averageRating || '—';
+          
+          showNotification('הסטטיסטיקות עודכנו בהצלחה!', 'success');
+        }
+      } catch (error) {
+        showNotification('שגיאה בטעינת הסטטיסטיקות', 'error');
+      } finally {
+        ui.refreshInsights.disabled = false;
+        ui.refreshInsights.textContent = '📊 רענן סטטיסטיקות';
+      }
+    });
+  }
+}
+
 // Initialize mobile features when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   initMobileNavigation();
@@ -1298,6 +1334,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileLocationServices();
   initQuickSearch();
   initMobileCategoryCards();
+  initProfileFeatures();
 });
 
 // Service Worker registration for PWA
