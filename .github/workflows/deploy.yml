@@ -31,7 +31,9 @@ jobs:
         run: npm ci
         
       - name: Build project
-        run: npm run build:simple
+        run: |
+          npm run build
+          mv dist/index.simple.html dist/index.html
         env:
           VITE_APP_VERSION: ${{ github.sha }}
           VITE_BUILD_ENV: production
