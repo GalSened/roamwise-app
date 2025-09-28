@@ -1,5 +1,5 @@
 // RoamWise — app.js (with Weather card & compare)
-const PROXY = "https://roamwise-proxy-971999716773.europe-west1.run.app"; // e.g. https://roamwise-proxy-xxxxx.a.run.app
+const PROXY = "https://roamwise-proxy-971999716773.us-central1.run.app"; // e.g. https://roamwise-proxy-xxxxx.a.run.app
 
 // Leaflet map
 let map = L.map('map', { zoomControl:true }).setView([45.8144, 10.8400], 12);
@@ -45,7 +45,20 @@ const ui = {
   aiRecommendations: document.getElementById('aiRecommendations'),
   smartNotifications: document.getElementById('smartNotifications'),
   aiToggle: document.getElementById('aiToggle'),
-  voiceHelpBtn: document.getElementById('voiceHelpBtn')
+  voiceHelpBtn: document.getElementById('voiceHelpBtn'),
+  // Trip Planning Elements
+  tripToggle: document.getElementById('tripToggle'),
+  tripPlanForm: document.getElementById('tripPlanForm'),
+  tripDuration: document.getElementById('tripDuration'),
+  customHoursField: document.getElementById('customHoursField'),
+  customHours: document.getElementById('customHours'),
+  tripBudget: document.getElementById('tripBudget'),
+  groupSize: document.getElementById('groupSize'),
+  tripMobility: document.getElementById('tripMobility'),
+  planTripBtn: document.getElementById('planTripBtn'),
+  tripPlanStatus: document.getElementById('tripPlanStatus'),
+  tripPlanDisplay: document.getElementById('tripPlanDisplay'),
+  liveNavigation: document.getElementById('liveNavigation')
 };
 
 // PWA install prompt
@@ -781,6 +794,523 @@ async function updateWeatherCard(lat, lng){
   ui.wxDesc.textContent = (w.current?.is_day? 'יום' : 'לילה') + (pop6!=null? ` · גשם בשש השעות הקרובות ~${pop6}%` : '');
   ui.wxHiLo.textContent = `H:${hi!=null?Math.round(hi):'—'}° · L:${lo!=null?Math.round(lo):'—'}°`;
   ui.wxNext.textContent = 'טיפ: גרור את המפה לאזור אחר ולחץ רענן כדי לראות מז״א שם.';
+}
+
+// Trip Planning Functionality
+let currentTrip = null;
+let currentActivity = 0;
+let selectedInterests = [];
+
+// Trip planning event listeners
+ui.tripToggle.addEventListener('click', () => {
+  const isHidden = ui.tripPlanForm.hidden;
+  ui.tripPlanForm.hidden = !isHidden;
+  ui.tripToggle.textContent = isHidden ? '📋' : '❌';
+});
+
+ui.tripDuration.addEventListener('change', (e) => {
+  ui.customHoursField.hidden = e.target.value !== 'custom';
+});
+
+// Interest chips selection
+document.querySelectorAll('.interest-chip').forEach(chip => {
+  chip.addEventListener('click', (e) => {
+    e.preventDefault();
+    const interest = e.target.dataset.interest;
+    if (selectedInterests.includes(interest)) {
+      selectedInterests = selectedInterests.filter(i => i !== interest);
+      e.target.classList.remove('selected');
+    } else {
+      selectedInterests.push(interest);
+      e.target.classList.add('selected');
+    }
+  });
+});
+
+ui.planTripBtn.addEventListener('click', async () => {
+  if (!here) {
+    ui.tripPlanStatus.textContent = 'צריך מיקום תחילה - הפעל מיקום או לחץ על המפה';
+    return;
+  }
+
+  ui.planTripBtn.disabled = true;
+  ui.tripPlanStatus.textContent = 'מתכנן טיול מותאם אישית... 🤖';
+
+  try {
+    const duration = ui.tripDuration.value;
+    const customHours = duration === 'custom' ? parseInt(ui.customHours.value) : undefined;
+    
+    const response = await fetch(`${PROXY}/plan-trip`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        startLocation: { lat: here.lat, lng: here.lng },
+        duration,
+        customHours,
+        interests: selectedInterests,
+        budget: ui.tripBudget.value,
+        groupSize: parseInt(ui.groupSize.value),
+        mobility: ui.tripMobility.value,
+        userId: getUserId()
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.ok) {
+      currentTrip = data.tripPlan;
+      currentActivity = 0;
+      displayTripPlan(data.tripPlan, data.tripId);
+      ui.tripPlanStatus.textContent = `נוצר טיול מושלם! 🎯`;
+      
+      // Track this interaction
+      trackInteraction('trip_planned', 'plan_trip', { 
+        duration, 
+        interests: selectedInterests,
+        activities_count: data.tripPlan.activities.length 
+      });
+    } else {
+      ui.tripPlanStatus.textContent = `שגיאה: ${data.error}`;
+    }
+  } catch (error) {
+    ui.tripPlanStatus.textContent = `שגיאה בתכנון: ${error.message}`;
+  } finally {
+    ui.planTripBtn.disabled = false;
+  }
+});
+
+function displayTripPlan(tripPlan, tripId) {
+  // Clear previous display
+  ui.tripPlanDisplay.innerHTML = '';
+  ui.tripPlanDisplay.hidden = false;
+
+  // Trip overview
+  const overview = document.createElement('div');
+  overview.className = 'trip-overview';
+  overview.innerHTML = `
+    <div class="trip-title">${tripPlan.title}</div>
+    <div class="trip-meta">
+      <span>💰 ${tripPlan.estimated_cost}</span>
+      <span>⏱️ ${tripPlan.activities.length} פעילויות</span>
+      <span>📍 מטיול ${tripId.split('_')[1]}</span>
+    </div>
+    <div class="trip-description">${tripPlan.overview}</div>
+  `;
+  ui.tripPlanDisplay.appendChild(overview);
+
+  // Activities
+  const activitiesContainer = document.createElement('div');
+  activitiesContainer.className = 'trip-activities';
+
+  tripPlan.activities.forEach((activity, index) => {
+    const activityEl = document.createElement('div');
+    activityEl.className = `trip-activity ${index === currentActivity ? 'current' : ''}`;
+    activityEl.innerHTML = `
+      <div class="activity-header">
+        <div class="activity-name">${activity.name}</div>
+        <div class="activity-duration">${activity.duration_minutes}ד'</div>
+      </div>
+      <div class="activity-description">${activity.description}</div>
+      ${activity.place ? `
+        <div class="activity-place">
+          <div class="place-info">
+            <div class="place-name">${activity.place.name}</div>
+            <div class="place-address">${activity.place.address}</div>
+          </div>
+          <div class="place-rating">⭐ ${activity.place.rating || 'N/A'}</div>
+        </div>
+        <div class="activity-actions">
+          <button class="activity-btn primary" onclick="navigateToActivity(${index})">🗺️ נווט</button>
+          <button class="activity-btn" onclick="viewOnMap(${activity.place.lat}, ${activity.place.lng})">👁️ במפה</button>
+          ${activity.place.id ? `<button class="activity-btn" onclick="getPlaceDetails('${activity.place.id}')">ℹ️ פרטים</button>` : ''}
+        </div>
+      ` : `
+        <div class="activity-actions">
+          <button class="activity-btn" onclick="searchNearbyForActivity('${activity.name}')">🔍 חפש מקומות</button>
+        </div>
+      `}
+    `;
+    activitiesContainer.appendChild(activityEl);
+  });
+
+  ui.tripPlanDisplay.appendChild(activitiesContainer);
+
+  // Tips
+  if (tripPlan.tips && tripPlan.tips.length > 0) {
+    const tipsEl = document.createElement('div');
+    tipsEl.className = 'trip-tips';
+    tipsEl.innerHTML = `
+      <div class="tips-title">💡 טיפים לטיול</div>
+      <ul class="tips-list">
+        ${tripPlan.tips.map(tip => `<li>${tip}</li>`).join('')}
+      </ul>
+    `;
+    ui.tripPlanDisplay.appendChild(tipsEl);
+  }
+
+  // Start navigation button
+  const navStart = document.createElement('button');
+  navStart.className = 'primary full-width';
+  navStart.style.marginTop = '16px';
+  navStart.textContent = '🚀 התחל טיול';
+  navStart.onclick = () => startLiveNavigation(tripId);
+  ui.tripPlanDisplay.appendChild(navStart);
+}
+
+function navigateToActivity(activityIndex) {
+  currentActivity = activityIndex;
+  updateCurrentActivityDisplay();
+  
+  const activity = currentTrip.activities[activityIndex];
+  if (activity.place) {
+    viewOnMap(activity.place.lat, activity.place.lng);
+    // Auto-calculate route if we have current location
+    if (here) {
+      calculateRoute(here, { lat: activity.place.lat, lng: activity.place.lng });
+    }
+  }
+}
+
+function viewOnMap(lat, lng) {
+  map.setView([lat, lng], 16);
+  // Add a temporary marker
+  const marker = L.marker([lat, lng]).addTo(map);
+  setTimeout(() => map.removeLayer(marker), 5000);
+}
+
+function updateCurrentActivityDisplay() {
+  document.querySelectorAll('.trip-activity').forEach((el, index) => {
+    el.classList.toggle('current', index === currentActivity);
+  });
+}
+
+function startLiveNavigation(tripId) {
+  ui.liveNavigation.hidden = false;
+  ui.liveNavigation.innerHTML = `
+    <div class="nav-current">
+      <div class="nav-progress">פעילות ${currentActivity + 1} מתוך ${currentTrip.activities.length}</div>
+      <div class="nav-destination">${currentTrip.activities[currentActivity].name}</div>
+      <div class="nav-instructions">עוקב אחר המיקום ומנווט לפעילות הבאה...</div>
+      <div class="nav-actions">
+        <button class="nav-btn" onclick="nextActivity('${tripId}')">הבא ✈️</button>
+        <button class="nav-btn secondary" onclick="pauseNavigation()">השהה ⏸️</button>
+      </div>
+    </div>
+  `;
+  
+  // Start location tracking for navigation
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(
+      (position) => updateLiveNavigation(tripId, position),
+      (error) => console.error('Navigation error:', error),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+    );
+  }
+}
+
+async function updateLiveNavigation(tripId, position) {
+  const currentLocation = {
+    lat: position.coords.latitude,
+    lng: position.coords.longitude
+  };
+
+  try {
+    const response = await fetch(`${PROXY}/navigate-trip`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tripId,
+        userId: getUserId(),
+        currentLocation,
+        currentActivity
+      })
+    });
+
+    const data = await response.json();
+    if (data.ok && data.currentActivity) {
+      // Update navigation display with real-time info
+      const navEl = ui.liveNavigation.querySelector('.nav-current');
+      if (navEl) {
+        navEl.querySelector('.nav-instructions').textContent = 
+          data.navigation ? `${data.navigation.durationText} · ${data.navigation.distanceText}` : 'מחשב מסלול...';
+      }
+    }
+  } catch (error) {
+    console.error('Live navigation error:', error);
+  }
+}
+
+function nextActivity(tripId) {
+  if (currentActivity < currentTrip.activities.length - 1) {
+    currentActivity++;
+    updateCurrentActivityDisplay();
+    navigateToActivity(currentActivity);
+    
+    // Update live navigation
+    const navEl = ui.liveNavigation.querySelector('.nav-current');
+    if (navEl) {
+      navEl.querySelector('.nav-progress').textContent = `פעילות ${currentActivity + 1} מתוך ${currentTrip.activities.length}`;
+      navEl.querySelector('.nav-destination').textContent = currentTrip.activities[currentActivity].name;
+    }
+  } else {
+    // Trip completed
+    ui.liveNavigation.innerHTML = `
+      <div class="nav-current">
+        <div class="nav-destination">🎉 הטיול הושלם!</div>
+        <div class="nav-instructions">איך היה? דרג את החוויה שלך</div>
+        <div class="nav-actions">
+          <button class="nav-btn" onclick="rateTripExperience('${tripId}', 5)">מעולה ⭐⭐⭐⭐⭐</button>
+          <button class="nav-btn secondary" onclick="rateTripExperience('${tripId}', 3)">בסדר ⭐⭐⭐</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function pauseNavigation() {
+  ui.liveNavigation.hidden = true;
+}
+
+function rateTripExperience(tripId, rating) {
+  trackInteraction('trip_completed', 'trip_rating', { tripId, rating });
+  ui.liveNavigation.innerHTML = `
+    <div class="nav-current">
+      <div class="nav-destination">תודה על הדירוג! 🙏</div>
+      <div class="nav-instructions">נשמח לתכנן לך טיולים נוספים</div>
+    </div>
+  `;
+  setTimeout(() => { ui.liveNavigation.hidden = true; }, 3000);
+}
+
+// Mobile Navigation System
+function initMobileNavigation() {
+  const navItems = document.querySelectorAll('.nav-item');
+  const mobileViews = document.querySelectorAll('.mobile-view');
+  
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const targetView = item.dataset.view;
+      
+      // Update nav active state
+      navItems.forEach(nav => nav.classList.remove('active'));
+      item.classList.add('active');
+      
+      // Update view active state
+      mobileViews.forEach(view => view.classList.remove('active'));
+      const targetMobileView = document.querySelector(`[data-view="${targetView}"]`);
+      if (targetMobileView) {
+        targetMobileView.classList.add('active');
+      }
+      
+      // Special handling for map view
+      if (targetView === 'map') {
+        setTimeout(() => map.invalidateSize(), 300);
+      }
+      
+      // Add haptic feedback on mobile
+      if ('vibrate' in navigator) {
+        navigator.vibrate(10);
+      }
+    });
+  });
+}
+
+// Mobile-specific gestures and interactions
+function initMobileGestures() {
+  let startX, startY, deltaX, deltaY;
+  
+  // Add swipe gestures for navigation
+  document.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  
+  document.addEventListener('touchmove', (e) => {
+    if (!startX || !startY) return;
+    
+    deltaX = e.touches[0].clientX - startX;
+    deltaY = e.touches[0].clientY - startY;
+  }, { passive: true });
+  
+  document.addEventListener('touchend', () => {
+    if (!startX || !startY) return;
+    
+    // Reset values
+    startX = null;
+    startY = null;
+    deltaX = 0;
+    deltaY = 0;
+  }, { passive: true });
+}
+
+// Enhanced location services for mobile
+function initMobileLocationServices() {
+  const locationFab = document.getElementById('locationFab');
+  
+  if (locationFab) {
+    locationFab.addEventListener('click', () => {
+      if ('geolocation' in navigator) {
+        locationFab.classList.add('loading');
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            // Update map and current location
+            map.setView([lat, lng], 15);
+            setHere(lat, lng);
+            
+            // Add haptic feedback
+            if ('vibrate' in navigator) {
+              navigator.vibrate([50, 30, 50]);
+            }
+            
+            locationFab.classList.remove('loading');
+          },
+          (error) => {
+            console.error('Location error:', error);
+            locationFab.classList.remove('loading');
+            
+            // Show user-friendly error
+            showNotification('לא ניתן לקבל מיקום. אנא בדק הגדרות המיקום.', 'error');
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+          }
+        );
+      }
+    });
+  }
+}
+
+// Quick search functionality
+function initQuickSearch() {
+  const quickSearchInput = document.querySelector('.search-input');
+  const quickSearchBtn = document.querySelector('.search-btn');
+  
+  if (quickSearchInput && quickSearchBtn) {
+    quickSearchBtn.addEventListener('click', () => {
+      const query = quickSearchInput.value.trim();
+      if (query) {
+        // Switch to search view and perform search
+        document.querySelector('.nav-item[data-view="search"]').click();
+        
+        // Set the main search input and trigger search
+        setTimeout(() => {
+          if (ui.freeText) {
+            ui.freeText.value = query;
+            ui.thinkBtn.click();
+          }
+        }, 300);
+      }
+    });
+    
+    quickSearchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        quickSearchBtn.click();
+      }
+    });
+  }
+}
+
+// Enhanced category cards for mobile
+function initMobileCategoryCards() {
+  document.querySelectorAll('.category-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const preset = card.dataset.preset;
+      
+      // Add visual feedback
+      card.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        card.style.transform = '';
+      }, 150);
+      
+      // Add haptic feedback
+      if ('vibrate' in navigator) {
+        navigator.vibrate(20);
+      }
+      
+      // Trigger search based on preset
+      if (preset) {
+        document.getElementById('intent').value = preset;
+        ui.searchBtn.click();
+      }
+    });
+  });
+}
+
+// Notification system for mobile
+function showNotification(message, type = 'info', duration = 3000) {
+  const notification = document.createElement('div');
+  notification.className = `mobile-notification ${type}`;
+  notification.textContent = message;
+  
+  notification.style.cssText = `
+    position: fixed;
+    top: calc(var(--mobile-header-height) + 16px);
+    left: 16px;
+    right: 16px;
+    padding: 16px;
+    background: var(--glass);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    z-index: 1000;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+    box-shadow: var(--shadow-lg);
+  `;
+  
+  if (type === 'error') {
+    notification.style.borderColor = 'var(--secondary)';
+    notification.style.background = 'linear-gradient(135deg, rgba(255, 107, 107, 0.2), var(--glass))';
+  } else if (type === 'success') {
+    notification.style.borderColor = 'var(--success)';
+    notification.style.background = 'linear-gradient(135deg, rgba(107, 207, 127, 0.2), var(--glass))';
+  }
+  
+  document.body.appendChild(notification);
+  
+  // Animate in
+  setTimeout(() => {
+    notification.style.transform = 'translateY(0)';
+  }, 10);
+  
+  // Auto remove
+  setTimeout(() => {
+    notification.style.transform = 'translateY(-100%)';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, duration);
+}
+
+// Initialize mobile features when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  initMobileNavigation();
+  initMobileGestures();
+  initMobileLocationServices();
+  initQuickSearch();
+  initMobileCategoryCards();
+});
+
+// Service Worker registration for PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('SW registered: ', registration);
+      })
+      .catch((registrationError) => {
+        console.log('SW registration failed: ', registrationError);
+      });
+  });
 }
 
 // Accessibility improvements

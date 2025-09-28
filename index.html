@@ -24,8 +24,144 @@
   </nav>
 </header>
 
-<main id="app" class="layout" role="main">
-  <aside id="sidebar" class="panel" aria-label="לוח בקרה">
+<main id="app" class="mobile-layout" role="main">
+  
+  <!-- Mobile Bottom Navigation -->
+  <nav id="bottomNav" class="bottom-nav" aria-label="ניווט תחתון">
+    <button class="nav-item active" data-view="search">
+      <span class="nav-icon">🔍</span>
+      <span class="nav-label">חיפוש</span>
+    </button>
+    <button class="nav-item" data-view="ai">
+      <span class="nav-icon">🤖</span>
+      <span class="nav-label">AI</span>
+    </button>
+    <button class="nav-item" data-view="trip">
+      <span class="nav-icon">🗺️</span>
+      <span class="nav-label">טיול</span>
+    </button>
+    <button class="nav-item" data-view="map">
+      <span class="nav-icon">📍</span>
+      <span class="nav-label">מפה</span>
+    </button>
+    <button class="nav-item" data-view="profile">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">פרופיל</span>
+    </button>
+  </nav>
+
+  <!-- Mobile Map View (Full Screen) -->
+  <section id="mapView" class="mobile-view active" data-view="map">
+    <div id="map" role="application" aria-label="מפה"></div>
+    
+    <!-- Floating Action Button for Quick Actions -->
+    <div class="fab-container">
+      <button id="locationFab" class="fab primary" title="המיקום שלי">
+        <span>📍</span>
+      </button>
+    </div>
+    
+    <!-- Quick Search Overlay -->
+    <div id="quickSearch" class="quick-search">
+      <input type="text" placeholder="חפש מקום או פעילות..." class="search-input">
+      <button class="search-btn primary">חפש</button>
+    </div>
+  </section>
+
+  <!-- Search Panel (Mobile View) -->
+  <section id="searchView" class="mobile-view mobile-panel" data-view="search">
+    <div class="panel-header">
+      <h2>🔍 מה מחפשים?</h2>
+    </div>
+    
+    <div class="panel-content">
+      <!-- Weather Card -->
+      <section id="weatherCard" class="card weather-card" aria-live="polite">
+        <div class="row space">
+          <b>☁️ מזג אוויר כאן</b>
+          <button id="wxRefresh" class="ghost small" title="רענן">רענן</button>
+        </div>
+        <div class="weather-display">
+          <div class="weather-main">
+            <div id="wxTemp" class="wx-big">—°</div>
+            <div id="wxDesc" class="muted small">מחכה למיקום…</div>
+          </div>
+          <div class="pill" id="wxHiLo">H:—° · L:—°</div>
+        </div>
+        <div id="wxNext" class="muted small" style="margin-top:6px">—</div>
+      </section>
+
+      <!-- Quick Categories -->
+      <section class="card">
+        <h3 class="section-title">קטגוריות מהירות</h3>
+        <div class="category-grid">
+          <button class="category-card" data-preset="food">
+            <span class="category-icon">🍽️</span>
+            <span class="category-label">אוכל</span>
+          </button>
+          <button class="category-card" data-preset="viewpoints">
+            <span class="category-icon">🌄</span>
+            <span class="category-label">נוף</span>
+          </button>
+          <button class="category-card" data-preset="activities">
+            <span class="category-icon">🎯</span>
+            <span class="category-label">פעילויות</span>
+          </button>
+          <button class="category-card" data-preset="pizza">
+            <span class="category-icon">🍕</span>
+            <span class="category-label">פיצה</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Search Options -->
+      <section class="card">
+        <h3 class="section-title">אפשרויות חיפוש</h3>
+        <div class="search-controls">
+          <div class="control-group">
+            <label class="toggle-label">
+              <input type="checkbox" id="openNow" checked>
+              <span class="toggle-slider"></span>
+              פתוח עכשיו
+            </label>
+          </div>
+          
+          <div class="row">
+            <div class="field flex-1">
+              <label for="radius">רדיוס</label>
+              <select id="radius">
+                <option value="2000">2 ק״מ</option>
+                <option value="4000" selected>4 ק״מ</option>
+                <option value="7000">7 ק״מ</option>
+              </select>
+            </div>
+            <div class="field flex-1">
+              <label for="minRating">דירוג מינימום</label>
+              <select id="minRating">
+                <option value="0">הכל</option>
+                <option value="3.5">3.5+</option>
+                <option value="4.2" selected>4.2+</option>
+                <option value="4.5">4.5+</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <button id="searchBtn" class="primary full-width">🔍 חפש בסביבה</button>
+        <div id="status" class="muted small center"></div>
+      </section>
+
+      <!-- Results -->
+      <section id="list" class="results-section" aria-live="polite">
+        <div class="results-placeholder">
+          התוצאות יופיעו כאן לאחר החיפוש
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- AI Assistant Panel -->
+  <section id="aiView" class="mobile-view mobile-panel" data-view="ai">
     <section id="weatherCard" class="card" aria-live="polite">
       <div class="row space">
         <b>☁️ מזג אוויר כאן</b>
@@ -80,6 +216,80 @@
 
       <!-- Smart Notifications -->
       <div id="smartNotifications" class="notifications" hidden></div>
+    </section>
+
+    <!-- AI Trip Planning -->
+    <section id="tripPlanCard" class="card trip-plan-card">
+      <div class="row space">
+        <b>🗺️ תכנון טיול חכם</b>
+        <button id="tripToggle" class="ghost small" title="פתח/סגור תכנון">📋</button>
+      </div>
+      
+      <div id="tripPlanForm" class="trip-planning" hidden>
+        <!-- Duration Selection -->
+        <div class="field">
+          <label for="tripDuration"><b>משך הטיול</b></label>
+          <select id="tripDuration" aria-label="בחירת משך טיול">
+            <option value="half-day">חצי יום (4 שעות)</option>
+            <option value="full-day" selected>יום שלם (8 שעות)</option>
+            <option value="weekend">סוף שבוע (16 שעות)</option>
+            <option value="custom">מותאם אישית</option>
+          </select>
+        </div>
+
+        <div id="customHoursField" class="field" hidden>
+          <label for="customHours">כמה שעות?</label>
+          <input id="customHours" type="number" min="1" max="72" value="8">
+        </div>
+
+        <!-- Interests -->
+        <div class="field">
+          <label><b>תחומי עניין</b></label>
+          <div class="chips interest-chips">
+            <button type="button" data-interest="food" class="interest-chip">🍽️ אוכל</button>
+            <button type="button" data-interest="culture" class="interest-chip">🎭 תרבות</button>
+            <button type="button" data-interest="adventure" class="interest-chip">🏔️ הרפתקה</button>
+            <button type="button" data-interest="relaxation" class="interest-chip">😌 רגיעה</button>
+            <button type="button" data-interest="nightlife" class="interest-chip">🌙 חיי לילה</button>
+            <button type="button" data-interest="shopping" class="interest-chip">🛍️ קניות</button>
+          </div>
+        </div>
+
+        <!-- Budget and Group -->
+        <div class="row">
+          <div class="field" style="flex: 1">
+            <label for="tripBudget">תקציב</label>
+            <select id="tripBudget">
+              <option value="low">נמוך (עד 200₪)</option>
+              <option value="medium" selected>בינוני (200-500₪)</option>
+              <option value="high">גבוה (500₪+)</option>
+            </select>
+          </div>
+          <div class="field" style="flex: 1">
+            <label for="groupSize">כמה אנשים?</label>
+            <input id="groupSize" type="number" min="1" max="20" value="1">
+          </div>
+        </div>
+
+        <!-- Mobility -->
+        <div class="field">
+          <label for="tripMobility">איך תנועה?</label>
+          <select id="tripMobility">
+            <option value="walking" selected>🚶‍♂️ הליכה</option>
+            <option value="car">🚗 רכב</option>
+            <option value="public">🚌 תחבורה ציבורית</option>
+          </select>
+        </div>
+
+        <button id="planTripBtn" class="primary full-width">✨ תכנן לי טיול מושלם!</button>
+        <div id="tripPlanStatus" class="muted small"></div>
+      </div>
+
+      <!-- Trip Plan Display -->
+      <div id="tripPlanDisplay" class="trip-plan-display" hidden></div>
+      
+      <!-- Live Navigation -->
+      <div id="liveNavigation" class="live-navigation" hidden></div>
     </section>
 
     <section class="card">
