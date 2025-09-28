@@ -3,234 +3,270 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RoamWise — מסלולים וחיפושים חכמים</title>
+<title>RoamWise — מדריך הטיולים החכם שלך</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0b0b0f">
+<meta name="theme-color" content="#0066cc">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+<!-- Clear Header -->
 <header class="appbar" role="banner">
   <div class="brand">
     <div class="logo">🧭</div>
     <div class="title">RoamWise</div>
   </div>
   <nav class="actions" aria-label="פעולות ראשיות">
-    <button id="installBtn" class="ghost" aria-label="התקנה">התקנה</button>
-    <a href="https://github.com/" target="_blank" class="ghost" aria-label="גיטהאב">GitHub</a>
+    <button id="installBtn" class="ghost">התקן אפליקציה</button>
   </nav>
 </header>
 
 <main id="app" class="mobile-layout" role="main">
   
-  <!-- Mobile Map View (Full Screen) -->
+  <!-- Map View - Simple and Clean -->
   <section id="mapView" class="mobile-view active" data-view="map">
     <div id="map" role="application" aria-label="מפה"></div>
     
-    <!-- Floating Action Button for Quick Actions -->
+    <!-- Clear Location Button -->
     <div class="fab-container">
-      <button id="locationFab" class="fab primary" title="המיקום שלי">
+      <button id="locationFab" class="fab primary" title="הראה את המיקום שלי">
         <span>📍</span>
+        <span class="fab-label">המיקום שלי</span>
       </button>
     </div>
     
-    <!-- Quick Search Overlay -->
+    <!-- Simple Search -->
     <div id="quickSearch" class="quick-search">
-      <input type="text" placeholder="חפש מקום או פעילות..." class="search-input">
+      <input type="text" placeholder="חפש מקומות..." class="search-input">
       <button class="search-btn primary">חפש</button>
+    </div>
+
+    <!-- Map Help Overlay -->
+    <div class="map-help">
+      <div class="help-tip">
+        💡 לחץ על 📍 כדי למצוא את המיקום שלך
+      </div>
     </div>
   </section>
 
-  <!-- Search Panel (Mobile View) -->
+  <!-- Clear Search Interface -->
   <section id="searchView" class="mobile-view mobile-panel" data-view="search">
     <div class="panel-header">
-      <h2>🔍 מה מחפשים?</h2>
+      <h2>🔍 חיפוש מקומות</h2>
+      <p class="section-subtitle">מצא מקומות מעניינים בסביבתך</p>
     </div>
     
     <div class="panel-content">
-      <!-- Weather Card -->
-      <section id="weatherCard" class="card weather-card" aria-live="polite">
-        <div class="row space">
-          <b>☁️ מזג אוויר כאן</b>
-          <button id="wxRefresh" class="ghost small" title="רענן">רענן</button>
-        </div>
-        <div class="weather-display">
-          <div class="weather-main">
-            <div id="wxTemp" class="wx-big">—°</div>
-            <div id="wxDesc" class="muted small">מחכה למיקום…</div>
-          </div>
-          <div class="pill" id="wxHiLo">H:—° · L:—°</div>
-        </div>
-        <div id="wxNext" class="muted small" style="margin-top:6px">—</div>
-      </section>
-
-      <!-- Quick Categories -->
-      <section class="card">
-        <h3 class="section-title">קטגוריות מהירות</h3>
+      
+      <!-- Quick Start Categories -->
+      <section class="card highlight-card">
+        <h3 class="section-title">מה אתה מחפש?</h3>
         <div class="category-grid">
-          <button class="category-card" data-preset="food">
+          <button class="category-card featured" data-preset="food">
             <span class="category-icon">🍽️</span>
-            <span class="category-label">אוכל</span>
+            <span class="category-label">מסעדות ואוכל</span>
+            <span class="category-desc">מקומות טעימים</span>
           </button>
-          <button class="category-card" data-preset="viewpoints">
+          <button class="category-card featured" data-preset="viewpoints">
             <span class="category-icon">🌄</span>
-            <span class="category-label">נוף</span>
+            <span class="category-label">נופים יפים</span>
+            <span class="category-desc">תצפיות וטבע</span>
           </button>
-          <button class="category-card" data-preset="activities">
+          <button class="category-card featured" data-preset="activities">
             <span class="category-icon">🎯</span>
             <span class="category-label">פעילויות</span>
+            <span class="category-desc">בידור ושעשועים</span>
           </button>
-          <button class="category-card" data-preset="pizza">
-            <span class="category-icon">🍕</span>
-            <span class="category-label">פיצה</span>
+          <button class="category-card featured" data-preset="coffee">
+            <span class="category-icon">☕</span>
+            <span class="category-label">קפה ומתוק</span>
+            <span class="category-desc">בתי קפה וקינוחים</span>
           </button>
         </div>
       </section>
 
-      <!-- Search Options -->
+      <!-- Advanced Search -->
       <section class="card">
-        <h3 class="section-title">אפשרויות חיפוש</h3>
-        <div class="search-controls">
-          <div class="control-group">
-            <label class="toggle-label">
+        <h3 class="section-title">חיפוש מתקדם</h3>
+        
+        <!-- Free Text Search -->
+        <div class="search-group">
+          <label for="freeText" class="input-label">תאר מה אתה רוצה:</label>
+          <input id="freeText" type="text" placeholder='לדוגמה: "פיצה טובה עם נוף" או "קפה שקט לעבודה"' class="main-input">
+          <button id="thinkBtn" class="primary full-width">🤖 תן ל-AI למצוא עבורך</button>
+          <div id="thinkStatus" class="status-text"></div>
+        </div>
+
+        <!-- Search Options -->
+        <div class="options-group">
+          <h4 class="options-title">אפשרויות חיפוש:</h4>
+          
+          <div class="option-row">
+            <label class="toggle-label clear">
               <input type="checkbox" id="openNow" checked>
               <span class="toggle-slider"></span>
-              פתוח עכשיו
+              <span class="toggle-text">רק מקומות פתוחים עכשיו</span>
             </label>
           </div>
           
           <div class="row">
-            <div class="field flex-1">
-              <label for="radius">רדיוס</label>
-              <select id="radius">
-                <option value="2000">2 ק״מ</option>
-                <option value="4000" selected>4 ק״מ</option>
-                <option value="7000">7 ק״מ</option>
+            <div class="field">
+              <label for="radius" class="input-label">רדיוס חיפוש:</label>
+              <select id="radius" class="clear-select">
+                <option value="1000">1 ק״מ - קרוב מאוד</option>
+                <option value="2000">2 ק״מ - הליכה קצרה</option>
+                <option value="4000" selected>4 ק״מ - נסיעה קצרה</option>
+                <option value="7000">7 ק״מ - רדיוס רחב</option>
               </select>
             </div>
-            <div class="field flex-1">
-              <label for="minRating">דירוג מינימום</label>
-              <select id="minRating">
+            <div class="field">
+              <label for="minRating" class="input-label">דירוג מינימום:</label>
+              <select id="minRating" class="clear-select">
                 <option value="0">הכל</option>
-                <option value="3.5">3.5+</option>
-                <option value="4.2" selected>4.2+</option>
-                <option value="4.5">4.5+</option>
+                <option value="3.5">3.5+ ⭐⭐⭐</option>
+                <option value="4.2" selected>4.2+ ⭐⭐⭐⭐</option>
+                <option value="4.5">4.5+ ⭐⭐⭐⭐⭐</option>
               </select>
             </div>
           </div>
+          
+          <button id="searchBtn" class="secondary full-width">🔍 חפש עכשיו</button>
+          <div id="status" class="status-text"></div>
         </div>
-        
-        <button id="searchBtn" class="primary full-width">🔍 חפש בסביבה</button>
-        <div id="status" class="muted small center"></div>
       </section>
 
-      <!-- Free Text Search -->
-      <section class="card">
-        <h3 class="section-title">חיפוש חופשי</h3>
-        <div class="field">
-          <input id="freeText" type="text" placeholder="דבר חופשי: 'גלידה עם נוף לאגם' / 'מסלול לתחנה המרכזית'" aria-label="טקסט חופשי">
+      <!-- Weather Info -->
+      <section id="weatherCard" class="card weather-card compact">
+        <div class="weather-header">
+          <h3 class="section-title compact">🌤️ מזג האוויר</h3>
+          <button id="wxRefresh" class="ghost small">רענן</button>
         </div>
-        <button id="thinkBtn" class="primary full-width">בקש מ-RoamWise להבין</button>
-        <div id="thinkStatus" class="muted small center"></div>
+        <div class="weather-display">
+          <div class="weather-main">
+            <div id="wxTemp" class="wx-big">—°</div>
+            <div id="wxDesc" class="wx-desc">מאתר מיקום...</div>
+          </div>
+          <div class="pill" id="wxHiLo">חכה...</div>
+        </div>
       </section>
 
       <!-- Results -->
       <section id="list" class="results-section" aria-live="polite">
         <div class="results-placeholder">
-          התוצאות יופיעו כאן לאחר החיפוש
+          <div class="placeholder-icon">🔍</div>
+          <div class="placeholder-title">התוצאות יופיעו כאן</div>
+          <div class="placeholder-text">בחר קטגוריה או השתמש בחיפוש</div>
         </div>
       </section>
     </div>
   </section>
 
-  <!-- AI Assistant Panel -->
+  <!-- Clear AI Assistant -->
   <section id="aiView" class="mobile-view mobile-panel" data-view="ai">
     <div class="panel-header">
-      <h2>🤖 RoamWise AI</h2>
+      <h2>🤖 העוזר החכם שלך</h2>
+      <p class="section-subtitle">קבל המלצות אישיות והתווידע עם הקול</p>
     </div>
     
     <div class="panel-content">
-      <!-- AI Personalization Dashboard -->
-      <section id="aiCard" class="card ai-card">
-        <div class="row space">
-          <b>🤖 AI אישי</b>
-          <button id="aiToggle" class="ghost small" title="הגדרות AI">⚙️</button>
-        </div>
+      
+      <!-- Quick AI Actions -->
+      <section class="card highlight-card">
+        <h3 class="section-title">פעולות מהירות</h3>
         
-        <!-- Mood Selector -->
-        <div class="field">
-          <label for="moodSelect"><b>איך אתה מרגיש היום?</b></label>
-          <select id="moodSelect" aria-label="בחירת מצב רוח">
-            <option value="neutral">רגיל</option>
-            <option value="adventurous">הרפתקני</option>
-            <option value="relaxed">רגוע</option>
-            <option value="social">חברותי</option>
-            <option value="romantic">רומנטי</option>
-            <option value="hungry">רעב</option>
-            <option value="curious">סקרן</option>
-          </select>
-        </div>
-
-        <!-- Voice Interface -->
-        <div class="field">
-          <div class="row space">
-            <button id="voiceBtn" class="primary ai-voice">🎤 דבר עם RoamWise</button>
-            <button id="voiceHelpBtn" class="ghost small" title="עזרה בשימוש בקול">❓</button>
+        <!-- Mood Based Recommendations -->
+        <div class="ai-action-group">
+          <h4 class="action-title">איך אתה מרגיש היום?</h4>
+          <div class="mood-grid">
+            <button class="mood-card" data-mood="hungry">
+              <span class="mood-icon">🍽️</span>
+              <span class="mood-label">רעב</span>
+            </button>
+            <button class="mood-card" data-mood="adventurous">
+              <span class="mood-icon">🗺️</span>
+              <span class="mood-label">הרפתקני</span>
+            </button>
+            <button class="mood-card" data-mood="relaxed">
+              <span class="mood-icon">😌</span>
+              <span class="mood-label">רגוע</span>
+            </button>
+            <button class="mood-card" data-mood="social">
+              <span class="mood-icon">👥</span>
+              <span class="mood-label">חברותי</span>
+            </button>
           </div>
-          <span id="voiceStatus" class="muted small"></span>
-          <div id="voiceResponse" class="ai-response" hidden></div>
-        </div>
-
-        <!-- AI Recommendations -->
-        <div class="field">
-          <button id="aiRecommendBtn" class="secondary full-width">✨ קבל המלצות מותאמות אישית</button>
+          
+          <button id="aiRecommendBtn" class="primary full-width">✨ קבל המלצות מותאמות</button>
           <div id="aiRecommendations" class="ai-recommendations" hidden></div>
         </div>
-
-        <!-- Smart Notifications -->
-        <div id="smartNotifications" class="notifications" hidden></div>
       </section>
+
+      <!-- Voice Interface -->
+      <section class="card">
+        <h3 class="section-title">🎤 דיבור עם האפליקציה</h3>
+        <div class="voice-interface">
+          <div class="voice-instruction">
+            <p>לחץ על הכפתור ודבר בעברית:</p>
+            <ul class="voice-examples">
+              <li>"אני רוצה לאכול משהו טעים"</li>
+              <li>"תכנן לי טיול למחר"</li>
+              <li>"מצא לי מקום שקט לעבודה"</li>
+            </ul>
+          </div>
+          
+          <button id="voiceBtn" class="voice-btn">
+            <span class="voice-icon">🎤</span>
+            <span class="voice-text">התחל לדבר</span>
+          </button>
+          
+          <div id="voiceStatus" class="voice-status"></div>
+          <div id="voiceResponse" class="ai-response" hidden></div>
+        </div>
+      </section>
+
+      <!-- Notifications -->
+      <div id="smartNotifications" class="notifications" hidden></div>
     </div>
   </section>
 
-  <!-- Trip Planning Panel -->
+  <!-- Clear Trip Planning -->
   <section id="tripView" class="mobile-view mobile-panel" data-view="trip">
     <div class="panel-header">
-      <h2>🗺️ תכנון טיול חכם</h2>
+      <h2>🗺️ תכנון טיול אוטומטי</h2>
+      <p class="section-subtitle">AI יתכנן לך טיול מושלם לפי ההעדפות שלך</p>
     </div>
     
     <div class="panel-content">
-      <!-- AI Trip Planning -->
-      <section id="tripPlanCard" class="card trip-plan-card">
-        <div class="row space">
-          <b>✨ תכנון אוטומטי</b>
-          <button id="tripToggle" class="ghost small" title="פתח/סגור תכנון">📋</button>
-        </div>
+      
+      <!-- Trip Planning Form -->
+      <section class="card highlight-card">
+        <h3 class="section-title">בואו נתכנן טיול!</h3>
         
-        <div id="tripPlanForm" class="trip-planning">
-          <!-- Duration Selection -->
-          <div class="field">
-            <label for="tripDuration"><b>משך הטיול</b></label>
-            <select id="tripDuration" aria-label="בחירת משך טיול">
+        <div class="trip-form">
+          <!-- Duration -->
+          <div class="form-group">
+            <label for="tripDuration" class="input-label">כמה זמן יש לך?</label>
+            <select id="tripDuration" class="clear-select">
               <option value="half-day">חצי יום (4 שעות)</option>
               <option value="full-day" selected>יום שלם (8 שעות)</option>
-              <option value="weekend">סוף שבוע (16 שעות)</option>
-              <option value="custom">מותאם אישית</option>
+              <option value="weekend">סוף שבוע שלם</option>
+              <option value="custom">זמן מותאם אישית</option>
             </select>
           </div>
 
-          <div id="customHoursField" class="field" hidden>
-            <label for="customHours">כמה שעות?</label>
-            <input id="customHours" type="number" min="1" max="72" value="8">
+          <div id="customHoursField" class="form-group" hidden>
+            <label for="customHours" class="input-label">כמה שעות בדיוק?</label>
+            <input id="customHours" type="number" min="1" max="72" value="8" class="main-input">
           </div>
 
           <!-- Interests -->
-          <div class="field">
-            <label><b>תחומי עניין</b></label>
-            <div class="chips interest-chips">
+          <div class="form-group">
+            <label class="input-label">מה מעניין אותך? (בחר כמה שתרצה)</label>
+            <div class="interest-grid">
               <button type="button" data-interest="food" class="interest-chip">🍽️ אוכל</button>
               <button type="button" data-interest="culture" class="interest-chip">🎭 תרבות</button>
               <button type="button" data-interest="adventure" class="interest-chip">🏔️ הרפתקה</button>
@@ -242,73 +278,79 @@
 
           <!-- Budget and Group -->
           <div class="row">
-            <div class="field" style="flex: 1">
-              <label for="tripBudget">תקציב</label>
-              <select id="tripBudget">
-                <option value="low">נמוך (עד 200₪)</option>
+            <div class="form-group">
+              <label for="tripBudget" class="input-label">תקציב:</label>
+              <select id="tripBudget" class="clear-select">
+                <option value="low">חסכני (עד 200₪)</option>
                 <option value="medium" selected>בינוני (200-500₪)</option>
-                <option value="high">גבוה (500₪+)</option>
+                <option value="high">נדיב (500₪+)</option>
               </select>
             </div>
-            <div class="field" style="flex: 1">
-              <label for="groupSize">כמה אנשים?</label>
-              <input id="groupSize" type="number" min="1" max="20" value="1">
+            <div class="form-group">
+              <label for="groupSize" class="input-label">כמה אנשים?</label>
+              <input id="groupSize" type="number" min="1" max="20" value="1" class="main-input">
             </div>
           </div>
 
-          <!-- Mobility -->
-          <div class="field">
-            <label for="tripMobility">איך תנועה?</label>
-            <select id="tripMobility">
+          <!-- Transportation -->
+          <div class="form-group">
+            <label for="tripMobility" class="input-label">איך תתנקלו?</label>
+            <select id="tripMobility" class="clear-select">
               <option value="walking" selected>🚶‍♂️ הליכה</option>
               <option value="car">🚗 רכב</option>
               <option value="public">🚌 תחבורה ציבורית</option>
             </select>
           </div>
 
-          <button id="planTripBtn" class="primary full-width">✨ תכנן לי טיול מושלם!</button>
-          <div id="tripPlanStatus" class="muted small center"></div>
+          <button id="planTripBtn" class="primary full-width trip-plan-btn">
+            ✨ תכנן לי טיול מושלם!
+          </button>
+          <div id="tripPlanStatus" class="status-text"></div>
         </div>
-
-        <!-- Trip Plan Display -->
-        <div id="tripPlanDisplay" class="trip-plan-display" hidden></div>
-        
-        <!-- Live Navigation -->
-        <div id="liveNavigation" class="live-navigation" hidden></div>
       </section>
+
+      <!-- Trip Plan Display -->
+      <div id="tripPlanDisplay" class="trip-plan-display" hidden></div>
+      
+      <!-- Live Navigation -->
+      <div id="liveNavigation" class="live-navigation" hidden></div>
     </div>
   </section>
 
-  <!-- Profile Panel -->
+  <!-- Clear Profile -->
   <section id="profileView" class="mobile-view mobile-panel" data-view="profile">
     <div class="panel-header">
-      <h2>👤 הפרופיל שלי</h2>
+      <h2>👤 הפרופיל שלך</h2>
+      <p class="section-subtitle">הסטטיסטיקות וההגדרות שלך</p>
     </div>
     
     <div class="panel-content">
-      <!-- User Insights -->
+      
+      <!-- Stats -->
       <section class="card">
-        <h3 class="section-title">📊 הסטטיסטיקות שלי</h3>
-        <div id="userInsights" class="user-insights">
-          <div class="insight-item">
-            <span class="insight-label">ביקורים:</span>
-            <span class="insight-value" id="totalVisits">0</span>
+        <h3 class="section-title">📊 הפעילות שלך</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number" id="totalVisits">0</div>
+            <div class="stat-label">מקומות שביקרת</div>
           </div>
-          <div class="insight-item">
-            <span class="insight-label">דירוג ממוצע:</span>
-            <span class="insight-value" id="avgRating">—</span>
+          <div class="stat-card">
+            <div class="stat-number" id="avgRating">—</div>
+            <div class="stat-label">דירוג ממוצע</div>
           </div>
         </div>
-        <button id="refreshInsights" class="secondary full-width">📊 רענן סטטיסטיקות</button>
+        <button id="refreshInsights" class="secondary full-width">📊 רענן נתונים</button>
       </section>
 
       <!-- Favorites -->
       <section class="card">
-        <div class="row space">
-          <b>⭐ מועדפים</b>
-          <span class="muted small">(נשמר מקומית)</span>
+        <h3 class="section-title">⭐ המועדפים שלך</h3>
+        <div id="favList" class="favorites-list">
+          <div class="empty-state">
+            <div class="empty-icon">⭐</div>
+            <div class="empty-text">עדיין לא שמרת מקומות מועדפים</div>
+          </div>
         </div>
-        <div id="favList" class="muted small">אין מועדפים עדיין</div>
       </section>
 
       <!-- Settings -->
@@ -316,17 +358,17 @@
         <h3 class="section-title">⚙️ הגדרות</h3>
         <div class="settings-list">
           <div class="setting-item">
-            <label class="toggle-label">
+            <label class="toggle-label clear">
               <input type="checkbox" id="notificationsEnabled" checked>
               <span class="toggle-slider"></span>
-              התראות חכמות
+              <span class="toggle-text">התראות חכמות</span>
             </label>
           </div>
           <div class="setting-item">
-            <label class="toggle-label">
+            <label class="toggle-label clear">
               <input type="checkbox" id="locationTracking" checked>
               <span class="toggle-slider"></span>
-              מעקב מיקום
+              <span class="toggle-text">מעקב מיקום</span>
             </label>
           </div>
         </div>
@@ -334,25 +376,25 @@
     </div>
   </section>
 
-  <!-- Mobile Bottom Navigation -->
-  <nav id="bottomNav" class="bottom-nav" aria-label="ניווט תחתון">
-    <button class="nav-item" data-view="search">
+  <!-- Clear Bottom Navigation -->
+  <nav id="bottomNav" class="bottom-nav" aria-label="ניווט ראשי">
+    <button class="nav-item" data-view="search" title="חיפוש מקומות">
       <span class="nav-icon">🔍</span>
       <span class="nav-label">חיפוש</span>
     </button>
-    <button class="nav-item" data-view="ai">
+    <button class="nav-item" data-view="ai" title="עוזר חכם">
       <span class="nav-icon">🤖</span>
       <span class="nav-label">AI</span>
     </button>
-    <button class="nav-item" data-view="trip">
+    <button class="nav-item" data-view="trip" title="תכנון טיול">
       <span class="nav-icon">🗺️</span>
       <span class="nav-label">טיול</span>
     </button>
-    <button class="nav-item active" data-view="map">
+    <button class="nav-item active" data-view="map" title="מפה">
       <span class="nav-icon">📍</span>
       <span class="nav-label">מפה</span>
     </button>
-    <button class="nav-item" data-view="profile">
+    <button class="nav-item" data-view="profile" title="פרופיל">
       <span class="nav-icon">👤</span>
       <span class="nav-label">פרופיל</span>
     </button>
@@ -361,6 +403,7 @@
   <!-- Hidden elements for compatibility -->
   <div style="display: none;">
     <div id="intent">pizza</div>
+    <div id="moodSelect">neutral</div>
     <div id="routeBox" hidden></div>
     <div id="placeBox"></div>
     <div id="activitiesFilters" hidden></div>
@@ -372,6 +415,10 @@
     <div id="routeGmapsBtn"></div>
     <div id="routeWazeBtn"></div>
     <div id="travelMode">driving</div>
+    <div id="aiToggle"></div>
+    <div id="voiceHelpBtn"></div>
+    <div id="tripToggle"></div>
+    <div id="wxNext"></div>
   </div>
 
 </main>
