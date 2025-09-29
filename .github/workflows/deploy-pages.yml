@@ -39,7 +39,8 @@ jobs:
           cp sw.js dist/ || true
           
           # Fix paths for GitHub Pages
-          sed -i 's|src="/roamwise-app/|src="/roamwise-app/|g' dist/index.html
+          sed -i 's|src="app-main.js"|src="/roamwise-app/app-main.js"|g' dist/index.html
+          sed -i 's|src="app.js"|src="/roamwise-app/app.js"|g' dist/index.html
           sed -i 's|href="manifest.webmanifest"|href="/roamwise-app/manifest.webmanifest"|g' dist/index.html
           sed -i 's|href="icons/icon-192.png"|href="/roamwise-app/icons/icon-192.png"|g' dist/index.html
       
