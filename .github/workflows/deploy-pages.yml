@@ -26,7 +26,22 @@ jobs:
         run: npm ci
       
       - name: Build
-        run: npm run build
+        run: |
+          # Create dist directory with our proper app
+          mkdir -p dist
+          cp index_new.html dist/index.html
+          cp app-main.js dist/
+          cp app.js dist/
+          cp -r assets dist/ || true
+          cp -r icons dist/ || true
+          cp manifest.webmanifest dist/ || true
+          cp registerSW.js dist/ || true
+          cp sw.js dist/ || true
+          
+          # Fix paths for GitHub Pages
+          sed -i 's|src="/roamwise-app/|src="/roamwise-app/|g' dist/index.html
+          sed -i 's|href="manifest.webmanifest"|href="/roamwise-app/manifest.webmanifest"|g' dist/index.html
+          sed -i 's|href="icons/icon-192.png"|href="/roamwise-app/icons/icon-192.png"|g' dist/index.html
       
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
