@@ -1,7 +1,7 @@
 // traveling — app.js (with Weather card & compare)
 
 // Define PROXY first
-const PROXY = "https://roamwise-proxy-2t6n2rxiaa-uc.a.run.app"; // Production proxy endpoint
+const PROXY = "https://roamwise-proxy-971999716773.us-central1.run.app"; // Production proxy endpoint
 
 // Boot guards and error handling
 if (typeof L === 'undefined') throw new Error('Leaflet library not loaded (check script order/SRI/CDN).');
