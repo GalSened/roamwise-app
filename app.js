@@ -96,24 +96,24 @@ ui.wxRefresh?.addEventListener('click', async ()=>{
 });
 
 // UI events
-document.getElementById('intent').addEventListener('change', onIntentChange);
+document.getElementById('intent')?.addEventListener('change', onIntentChange);
 document.querySelectorAll('[data-preset]').forEach(btn=>{
   btn.addEventListener('click', ()=> { setIntent(btn.dataset.preset); });
 });
 document.querySelectorAll('[data-activity]').forEach(btn=>{
   btn.addEventListener('click', ()=> { selectedActivity = btn.dataset.activity; doPlaces(); });
 });
-ui.searchBtn.addEventListener('click', doPlaces);
-ui.goRouteBtn.addEventListener('click', doRoute);
-ui.dest.addEventListener('input', debounce(doAutocomplete, 250));
-ui.thinkBtn.addEventListener('click', doThink);
+ui.searchBtn.addEventListener?.('click', doPlaces);
+ui.goRouteBtn.addEventListener?.('click', doRoute);
+ui.dest.addEventListener?.('input', debounce(doAutocomplete, 250));
+ui.thinkBtn.addEventListener?.('click', doThink);
 
 // AI Event Listeners
-ui.voiceBtn.addEventListener('click', startVoiceInput);
-ui.aiRecommendBtn.addEventListener('click', getAIRecommendations);
-ui.moodSelect.addEventListener('change', onMoodChange);
-ui.aiToggle.addEventListener('click', toggleAISettings);
-ui.voiceHelpBtn.addEventListener('click', showVoiceHelp);
+ui.voiceBtn.addEventListener?.('click', startVoiceInput);
+ui.aiRecommendBtn.addEventListener?.('click', getAIRecommendations);
+ui.moodSelect.addEventListener?.('change', onMoodChange);
+ui.aiToggle.addEventListener?.('click', toggleAISettings);
+ui.voiceHelpBtn.addEventListener?.('click', showVoiceHelp);
 
 function setIntent(mode){ document.getElementById('intent').value = mode; onIntentChange(); }
 
@@ -1194,13 +1194,13 @@ let currentWeatherData = null;
 let weatherForecastData = null;
 
 // Trip planning event listeners
-ui.tripToggle.addEventListener('click', () => {
+ui.tripToggle.addEventListener?.('click', () => {
   const isHidden = ui.tripPlanForm.hidden;
   ui.tripPlanForm.hidden = !isHidden;
   ui.tripToggle.textContent = isHidden ? '📋' : '❌';
 });
 
-ui.tripDuration.addEventListener('change', (e) => {
+ui.tripDuration.addEventListener?.('change', (e) => {
   ui.customHoursField.hidden = e.target.value !== 'custom';
 });
 
