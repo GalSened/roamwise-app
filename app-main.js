@@ -12,6 +12,7 @@ class SimpleNavigation {
     this.setupNavigation();
     this.setupThemeToggle();
     this.setupFormInteractions(); // Add this to ensure search works
+    this.setupMap(); // Initialize map
     this.showView('search');
   }
 
@@ -398,6 +399,72 @@ class SimpleNavigation {
         }
       });
     });
+  }
+
+  setupMap() {
+    // Wait for Leaflet to be loaded
+    if (typeof L === 'undefined') {
+      console.log('Waiting for Leaflet to load...');
+      setTimeout(() => this.setupMap(), 100);
+      return;
+    }
+
+    console.log('Initializing map...');
+
+    try {
+      // Initialize Leaflet map
+      this.map = L.map('map', { zoomControl: true }).setView([32.0853, 34.7818], 13); // Tel Aviv coordinates
+
+      // Add OpenStreetMap tiles
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(this.map);
+
+      // Add a marker for current location
+      this.userMarker = L.marker([32.0853, 34.7818]).addTo(this.map)
+        .bindPopup('Your Location')
+        .openPopup();
+
+      console.log('Map initialized successfully');
+
+      // Setup location button
+      const locationBtn = document.getElementById('locationBtn');
+      if (locationBtn) {
+        locationBtn.addEventListener('click', () => {
+          console.log('Location button clicked');
+          locationBtn.classList.add('active');
+
+          // Try to get user's actual location
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                // Update map center and marker
+                this.map.setView([lat, lng], 15);
+                this.userMarker.setLatLng([lat, lng]);
+                this.userMarker.bindPopup('You are here!').openPopup();
+
+                console.log('Location updated:', lat, lng);
+                locationBtn.classList.remove('active');
+              },
+              (error) => {
+                console.error('Geolocation error:', error);
+                alert('Unable to get your location. Please enable location services.');
+                locationBtn.classList.remove('active');
+              }
+            );
+          } else {
+            alert('Geolocation is not supported by your browser');
+            locationBtn.classList.remove('active');
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Map initialization error:', error);
+    }
   }
 }
 
