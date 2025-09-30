@@ -2137,7 +2137,7 @@ function initEnhancedGestures() {
   try {
     // Initialize enhanced features
     initEnhancedGestures();
-    logPerformanceMetrics();
+    // logPerformanceMetrics(); // Function not defined
     
     // Hide loading screen and show app
     document.getElementById('loadingScreen')?.style.setProperty('display', 'none');
