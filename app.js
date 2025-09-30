@@ -324,6 +324,7 @@ function toggleFav(p){
   saveFavs(arr);
 }
 function renderFavs(){
+  if (!ui.favList) return; // Element doesn't exist in current UI
   const arr = getFavs();
   ui.favList.innerHTML = '';
   if (!arr.length) { ui.favList.textContent = 'אין מועדפים עדיין'; return; }
