@@ -89,7 +89,7 @@ if (navigator.geolocation) {
     try { await updateWeatherCard(lat,lng); } catch {}
   }, ()=>{}, {enableHighAccuracy:true, timeout:8000});
 }
-ui.wxRefresh.addEventListener('click', async ()=>{
+ui.wxRefresh?.addEventListener('click', async ()=>{
   const c = map.getCenter();
   ui.wxDesc.textContent = 'מרענן…';
   try { await updateWeatherCard(c.lat, c.lng); } catch { ui.wxDesc.textContent = 'שגיאה במז״א'; }
