@@ -343,17 +343,8 @@
 
   <!-- Scripts -->
   <script src="/roamwise-app/app-main.js" defer></script>
-  <script src="/roamwise-app/app.js?v=leafletfix2" defer></script>
+  <script src="/roamwise-app/app.js?v=7" defer></script>
 
-  <!-- Service Worker cache clear (debug only) -->
-  <script defer>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations()
-        .then(rs => Promise.all(rs.map(r => r.unregister())))
-        .then(() => caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))))
-        .then(() => console.log('[RW] SW unregistered and caches cleared (debug).'));
-    }
-  </script>
   
   <script>
     // Show app when loaded and hide loading screen
