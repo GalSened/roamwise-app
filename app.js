@@ -1,4 +1,10 @@
 // traveling — app.js (with Weather card & compare)
+
+// Guard against missing Leaflet library
+if (typeof L === "undefined") {
+  throw new Error("Leaflet library not loaded. Check index.html script order.");
+}
+
 const PROXY = "https://roamwise-proxy-2t6n2rxiaa-uc.a.run.app"; // e.g. https://roamwise-proxy-xxxxx.a.run.app
 
 // Leaflet map
