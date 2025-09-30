@@ -1,9 +1,9 @@
 // traveling — app.js (with Weather card & compare)
 
-// Guard against missing Leaflet library
-if (typeof L === "undefined") {
-  throw new Error("Leaflet library not loaded. Check index.html script order.");
-}
+// Boot guards and error handling
+if (typeof window.PROXY === 'undefined' && typeof PROXY !== 'undefined') window.PROXY = PROXY;
+if (typeof L === 'undefined') throw new Error('Leaflet library not loaded (check script order/SRI/CDN).');
+if (!document.getElementById('map')) throw new Error('Missing #map container in DOM.');
 
 const PROXY = "https://roamwise-proxy-2t6n2rxiaa-uc.a.run.app"; // e.g. https://roamwise-proxy-xxxxx.a.run.app
 
@@ -2130,3 +2130,25 @@ function initEnhancedGestures() {
     startX = startY = null;
   }, { passive: true });
 }
+
+// App initialization boot
+(async function boot() {
+  try {
+    // Initialize enhanced features
+    initEnhancedGestures();
+    logPerformanceMetrics();
+    
+    // Hide loading screen and show app
+    document.getElementById('loadingScreen')?.style.setProperty('display', 'none');
+    document.getElementById('app')?.style.setProperty('display', 'block');
+    document.getElementById('fail-panel')?.classList.add('hidden');
+    
+    console.log('[RW] App initialized successfully');
+  } catch (err) {
+    console.error('[RW] App init failed:', err);
+    document.getElementById('loadingScreen')?.style.setProperty('display', 'none');
+    document.getElementById('fail-panel')?.classList.remove('hidden');
+    const msg = document.getElementById('fail-msg');
+    if (msg) msg.textContent = String(err?.message || err);
+  }
+})();

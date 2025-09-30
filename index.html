@@ -19,8 +19,33 @@
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   
-  <!-- Leaflet JS (must be before app.js) -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+  <!-- Leaflet JS (MUST be before app.js) -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+    defer
+  ></script>
+
+  <!-- Leaflet fallback loader -->
+  <script defer>
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        if (typeof window.L === 'undefined') {
+          const alt = document.createElement('script');
+          alt.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
+          alt.defer = true;
+          alt.onload = () => console.log('[RW] Loaded Leaflet fallback from jsDelivr');
+          document.head.appendChild(alt);
+
+          const altCss = document.createElement('link');
+          altCss.rel = 'stylesheet';
+          altCss.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';
+          document.head.appendChild(altCss);
+        }
+      }, 300);
+    });
+  </script>
   
   <style>
     /* Prevent flash of unstyled content */
@@ -91,6 +116,13 @@
       cursor: pointer;
       font-size: 1rem;
     }
+    
+    /* Map container height */
+    #map { 
+      height: 70vh; 
+      width: 100%;
+      position: relative;
+    }
   </style>
 </head>
 <body>
@@ -102,11 +134,12 @@
   </div>
 
   <!-- Error Screen -->
-  <div id="errorScreen" class="error-screen">
+  <div id="errorScreen" class="error-screen" id="fail-panel">
     <h1>⚠️ Failed to Load</h1>
-    <p style="color: #64748b; margin-bottom: 2rem;">
+    <p style="color: #64748b; margin-bottom: 1rem;">
       There was an error loading the Traveling app. Please check your connection and try again.
     </p>
+    <p id="fail-msg" style="color: #ef4444; font-family: monospace; font-size: 0.9rem; margin-bottom: 2rem;"></p>
     <button onclick="window.location.reload()">Reload App</button>
   </div>
 
@@ -310,7 +343,17 @@
 
   <!-- Scripts -->
   <script src="/roamwise-app/app-main.js" defer></script>
-  <script src="/roamwise-app/app.js?v=leafletfix" defer></script>
+  <script src="/roamwise-app/app.js?v=leafletfix2" defer></script>
+
+  <!-- Service Worker cache clear (debug only) -->
+  <script defer>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations()
+        .then(rs => Promise.all(rs.map(r => r.unregister())))
+        .then(() => caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))))
+        .then(() => console.log('[RW] SW unregistered and caches cleared (debug).'));
+    }
+  </script>
   
   <script>
     // Show app when loaded and hide loading screen
