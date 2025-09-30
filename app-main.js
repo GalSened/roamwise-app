@@ -115,6 +115,7 @@ class SimpleNavigation {
     this.setupSearch();
     this.setupTripGeneration();
     this.setupVoiceButton();
+    this.setupQuickActions();
   }
 
   setupSearch() {
@@ -358,6 +359,45 @@ class SimpleNavigation {
         }
       });
     }
+  }
+
+  setupQuickActions() {
+    document.querySelectorAll('.action-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.getAttribute('data-action');
+
+        // Switch to appropriate view and trigger action
+        switch(action) {
+          case 'find-food':
+            // Go to search view and search for food
+            this.showView('search');
+            setTimeout(() => {
+              const searchInput = document.getElementById('freeText');
+              const searchBtn = document.getElementById('searchBtn');
+              if (searchInput && searchBtn) {
+                searchInput.value = '🍽️ Food';
+                searchBtn.click();
+              }
+            }, 100);
+            break;
+
+          case 'weather':
+            // Show weather info - scroll to map view where weather is displayed
+            this.showView('map');
+            break;
+
+          case 'navigate':
+            // Go to map view for directions
+            this.showView('map');
+            break;
+
+          case 'recommend':
+            // Go to trip planning view
+            this.showView('trip');
+            break;
+        }
+      });
+    });
   }
 }
 
