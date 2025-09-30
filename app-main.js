@@ -160,10 +160,11 @@ class SimpleNavigation {
                 }
               })
             });
-            
+
             const data = await response.json();
             const resultsList = document.getElementById('list');
-            
+            resultsList.style.display = 'block'; // Show results
+
             if (data.results && data.results.length > 0) {
               resultsList.innerHTML = data.results.map(result => `
                 <div class="search-result ai-powered">
@@ -186,6 +187,7 @@ class SimpleNavigation {
           } catch (error) {
             console.error('AI Search error:', error);
             const resultsList = document.getElementById('list');
+            resultsList.style.display = 'block'; // Show results even on error
             resultsList.innerHTML = `
               <div class="search-result">
                 <h3>🔄 AI Learning Mode</h3>
