@@ -213,14 +213,27 @@ class SimpleNavigation {
     if (generateBtn) {
       generateBtn.addEventListener('click', async () => {
         console.log('Generating AI-powered trip...');
+
+        // Collect user preferences
+        const selectedDuration = document.querySelector('.duration-btn.selected')?.textContent || 'Full day';
+        const selectedInterests = Array.from(document.querySelectorAll('.interest-btn.selected')).map(el => el.textContent);
+        const budget = document.getElementById('budgetAmount')?.textContent || '300';
+
+        // Validate that at least one interest is selected
+        const tripDisplay = document.getElementById('enhancedTripDisplay');
+        if (selectedInterests.length === 0) {
+          tripDisplay.innerHTML = `
+            <div class="trip-result" style="background: var(--warning-bg, #fff3cd); border-left: 4px solid var(--warning, #ffc107); padding: 20px; border-radius: 8px;">
+              <h3>📝 Please Select Your Interests</h3>
+              <p>Choose at least one interest from the options above to generate a personalized trip!</p>
+              <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">💡 Tip: You can select up to 4 interests for the best recommendations.</p>
+            </div>
+          `;
+          return;
+        }
+
         generateBtn.textContent = '🧠 AI Thinking...';
         generateBtn.disabled = true;
-        
-        try {
-          // Collect user preferences
-          const selectedDuration = document.querySelector('.duration-btn.selected')?.textContent || 'Full day';
-          const selectedInterests = Array.from(document.querySelectorAll('.interest-btn.selected')).map(el => el.textContent);
-          const budget = document.getElementById('budgetAmount')?.textContent || '300';
           
           // Call Personal AI for recommendations
           const response = await fetch('https://premium-hybrid-473405-g7.uc.r.appspot.com/api/ai/recommend', {
@@ -313,52 +326,216 @@ class SimpleNavigation {
 
   setupVoiceButton() {
     const voiceBtn = document.getElementById('voiceBtn');
-    if (voiceBtn) {
-      let isListening = false;
-      
-      voiceBtn.addEventListener('mousedown', () => {
-        if (!isListening) {
+    if (!voiceBtn) return;
+
+    // Check for Web Speech API support
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      console.warn('Speech recognition not supported in this browser');
+      voiceBtn.disabled = true;
+      voiceBtn.title = 'Voice recognition not supported in this browser. Try Chrome or Edge.';
+      voiceBtn.querySelector('.voice-text').textContent = 'Not Supported';
+      return;
+    }
+
+    // Initialize speech recognition
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    let isListening = false;
+
+    // Handle recognition results
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      const confidence = event.results[0][0].confidence;
+
+      console.log('Voice input:', transcript, 'Confidence:', confidence);
+
+      const statusEl = document.getElementById('voiceStatus');
+      const responseEl = document.getElementById('voiceResponse');
+
+      if (statusEl) {
+        statusEl.textContent = '🤖 Processing your command...';
+      }
+
+      // Process the voice command
+      this.processVoiceCommand(transcript);
+
+      setTimeout(() => {
+        if (statusEl) statusEl.textContent = '';
+        if (responseEl) {
+          responseEl.textContent = `✅ Heard: "${transcript}"`;
+          responseEl.style.display = 'block';
+        }
+      }, 500);
+    };
+
+    // Handle recognition errors
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+
+      isListening = false;
+      voiceBtn.classList.remove('listening');
+      voiceBtn.querySelector('.voice-text').textContent = 'Press & Hold to Speak';
+
+      const statusEl = document.getElementById('voiceStatus');
+      const responseEl = document.getElementById('voiceResponse');
+
+      let errorMessage = '';
+      switch(event.error) {
+        case 'no-speech':
+          errorMessage = '❌ No speech detected. Please try again.';
+          break;
+        case 'audio-capture':
+          errorMessage = '❌ Microphone not found. Please check your device.';
+          break;
+        case 'not-allowed':
+          errorMessage = '❌ Microphone permission denied. Please enable it in settings.';
+          break;
+        case 'network':
+          errorMessage = '❌ Network error. Please check your connection.';
+          break;
+        default:
+          errorMessage = `❌ Error: ${event.error}`;
+      }
+
+      if (statusEl) {
+        statusEl.textContent = errorMessage;
+        setTimeout(() => {
+          statusEl.textContent = '';
+        }, 3000);
+      }
+      if (responseEl) {
+        responseEl.textContent = errorMessage;
+        responseEl.style.display = 'block';
+      }
+    };
+
+    // Handle recognition end
+    recognition.onend = () => {
+      isListening = false;
+      voiceBtn.classList.remove('listening');
+      voiceBtn.querySelector('.voice-text').textContent = 'Press & Hold to Speak';
+    };
+
+    // Mouse down - start listening
+    voiceBtn.addEventListener('mousedown', () => {
+      if (!isListening) {
+        try {
+          recognition.start();
           isListening = true;
           voiceBtn.classList.add('listening');
           voiceBtn.querySelector('.voice-text').textContent = 'Listening... Release to stop';
-          
+
           const statusEl = document.getElementById('voiceStatus');
           if (statusEl) {
             statusEl.textContent = '🎤 Listening for your voice command...';
           }
-        }
-      });
 
-      voiceBtn.addEventListener('mouseup', () => {
-        if (isListening) {
-          isListening = false;
-          voiceBtn.classList.remove('listening');
-          voiceBtn.querySelector('.voice-text').textContent = 'Press & Hold to Speak';
-          
-          const statusEl = document.getElementById('voiceStatus');
           const responseEl = document.getElementById('voiceResponse');
-          
-          if (statusEl) {
-            statusEl.textContent = '🤖 Processing your request...';
+          if (responseEl) {
+            responseEl.style.display = 'none';
           }
-          
-          setTimeout(() => {
-            if (statusEl) statusEl.textContent = '';
-            if (responseEl) {
-              responseEl.textContent = 'Demo: Voice recognition would work here. The AI would process your speech and provide intelligent responses!';
-              responseEl.style.display = 'block';
-            }
-          }, 1500);
+        } catch (error) {
+          console.error('Recognition start error:', error);
         }
-      });
+      }
+    });
 
-      voiceBtn.addEventListener('mouseleave', () => {
-        if (isListening) {
-          isListening = false;
-          voiceBtn.classList.remove('listening');
-          voiceBtn.querySelector('.voice-text').textContent = 'Press & Hold to Speak';
+    // Mouse up - stop listening
+    voiceBtn.addEventListener('mouseup', () => {
+      if (isListening) {
+        recognition.stop();
+      }
+    });
+
+    // Mouse leave - stop listening if active
+    voiceBtn.addEventListener('mouseleave', () => {
+      if (isListening) {
+        recognition.stop();
+      }
+    });
+  }
+
+  processVoiceCommand(transcript) {
+    const lowerTranscript = transcript.toLowerCase();
+    console.log('Processing command:', lowerTranscript);
+
+    // Parse voice commands and execute actions
+    if (lowerTranscript.includes('search for') || lowerTranscript.includes('find') || lowerTranscript.includes('look for')) {
+      // Extract search query
+      let query = lowerTranscript
+        .replace('search for', '')
+        .replace('find', '')
+        .replace('look for', '')
+        .replace('me', '')
+        .trim();
+
+      if (query) {
+        this.showView('search');
+        setTimeout(() => {
+          const searchInput = document.getElementById('freeText');
+          const searchBtn = document.getElementById('searchBtn');
+          if (searchInput && searchBtn) {
+            searchInput.value = query;
+            searchBtn.click();
+          }
+        }, 300);
+      }
+    } else if (lowerTranscript.includes('food') || lowerTranscript.includes('restaurant') || lowerTranscript.includes('eat')) {
+      this.showView('search');
+      setTimeout(() => {
+        const searchInput = document.getElementById('freeText');
+        const searchBtn = document.getElementById('searchBtn');
+        if (searchInput && searchBtn) {
+          searchInput.value = 'restaurants';
+          searchBtn.click();
         }
-      });
+      }, 300);
+    } else if (lowerTranscript.includes('plan') && (lowerTranscript.includes('trip') || lowerTranscript.includes('vacation'))) {
+      this.showView('trip');
+    } else if (lowerTranscript.includes('generate') && lowerTranscript.includes('trip')) {
+      this.showView('trip');
+      setTimeout(() => {
+        const generateBtn = document.getElementById('generateTripBtn');
+        if (generateBtn) {
+          generateBtn.click();
+        }
+      }, 500);
+    } else if (lowerTranscript.includes('map') || lowerTranscript.includes('navigation') || lowerTranscript.includes('location')) {
+      this.showView('map');
+    } else if (lowerTranscript.includes('weather')) {
+      this.showView('map');
+    } else if (lowerTranscript.includes('profile') || lowerTranscript.includes('setting')) {
+      this.showView('profile');
+    } else if (lowerTranscript.includes('go to') || lowerTranscript.includes('open')) {
+      // Try to extract page name
+      if (lowerTranscript.includes('search')) {
+        this.showView('search');
+      } else if (lowerTranscript.includes('ai') || lowerTranscript.includes('assistant')) {
+        this.showView('ai');
+      } else if (lowerTranscript.includes('trip')) {
+        this.showView('trip');
+      } else if (lowerTranscript.includes('map')) {
+        this.showView('map');
+      } else if (lowerTranscript.includes('profile')) {
+        this.showView('profile');
+      }
+    } else {
+      // Default: treat as search query
+      this.showView('search');
+      setTimeout(() => {
+        const searchInput = document.getElementById('freeText');
+        const searchBtn = document.getElementById('searchBtn');
+        if (searchInput && searchBtn) {
+          searchInput.value = transcript;
+          searchBtn.click();
+        }
+      }, 300);
     }
   }
 
