@@ -1,11 +1,11 @@
 // traveling — app.js (with Weather card & compare)
 
+// Define PROXY first
+const PROXY = "https://roamwise-proxy-2t6n2rxiaa-uc.a.run.app"; // Production proxy endpoint
+
 // Boot guards and error handling
-if (typeof window.PROXY === 'undefined' && typeof PROXY !== 'undefined') window.PROXY = PROXY;
 if (typeof L === 'undefined') throw new Error('Leaflet library not loaded (check script order/SRI/CDN).');
 if (!document.getElementById('map')) throw new Error('Missing #map container in DOM.');
-
-const PROXY = "https://roamwise-proxy-2t6n2rxiaa-uc.a.run.app"; // Production proxy endpoint
 
 // Leaflet map
 let map = L.map('map', { zoomControl:true }).setView([45.8144, 10.8400], 12);
