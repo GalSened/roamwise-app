@@ -91,17 +91,17 @@ class SimpleNavigation {
     }
 
     // Duration options
-    document.querySelectorAll('.duration-option').forEach(option => {
+    document.querySelectorAll('.duration-btn').forEach(option => {
       option.addEventListener('click', () => {
-        document.querySelectorAll('.duration-option').forEach(o => o.classList.remove('selected'));
+        document.querySelectorAll('.duration-btn').forEach(o => o.classList.remove('selected'));
         option.classList.add('selected');
       });
     });
 
     // Interest options
-    document.querySelectorAll('.interest-option').forEach(option => {
+    document.querySelectorAll('.interest-btn').forEach(option => {
       option.addEventListener('click', () => {
-        const selected = document.querySelectorAll('.interest-option.selected');
+        const selected = document.querySelectorAll('.interest-btn.selected');
         if (option.classList.contains('selected')) {
           option.classList.remove('selected');
         } else if (selected.length < 4) {
@@ -121,7 +121,22 @@ class SimpleNavigation {
     const searchBtn = document.getElementById('searchBtn');
     const searchInput = document.getElementById('freeText');
     console.log('Setting up search - Button:', !!searchBtn, 'Input:', !!searchInput);
-    
+
+    // Category buttons
+    document.querySelectorAll('.category-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Toggle selected state
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Get category and search
+        const category = btn.getAttribute('data-category');
+        const categoryText = btn.textContent.trim();
+        searchInput.value = categoryText;
+        searchBtn.click();
+      });
+    });
+
     if (searchBtn && searchInput) {
       searchBtn.addEventListener('click', async () => {
         const query = searchInput.value.trim();
@@ -199,8 +214,8 @@ class SimpleNavigation {
         
         try {
           // Collect user preferences
-          const selectedDuration = document.querySelector('.duration-option.selected')?.textContent || 'Full day';
-          const selectedInterests = Array.from(document.querySelectorAll('.interest-option.selected')).map(el => el.textContent);
+          const selectedDuration = document.querySelector('.duration-btn.selected')?.textContent || 'Full day';
+          const selectedInterests = Array.from(document.querySelectorAll('.interest-btn.selected')).map(el => el.textContent);
           const budget = document.getElementById('budgetAmount')?.textContent || '300';
           
           // Call Personal AI for recommendations
@@ -270,7 +285,7 @@ class SimpleNavigation {
               <div class="trip-summary">
                 <div class="trip-stat">
                   <span class="stat-label">Duration:</span>
-                  <span class="stat-value">${document.querySelector('.duration-option.selected')?.textContent || 'Full day'}</span>
+                  <span class="stat-value">${document.querySelector('.duration-btn.selected')?.textContent || 'Full day'}</span>
                 </div>
                 <div class="trip-stat">
                   <span class="stat-label">Budget:</span>
