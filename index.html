@@ -2,148 +2,929 @@
 <html lang="en" dir="ltr" data-theme="light">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Traveling — AI-Powered Travel Planner</title>
   <meta name="description" content="Smart travel planning with weather-aware routing, voice AI, and in-app navigation">
-  
+
   <!-- PWA -->
   <link rel="manifest" href="/roamwise-app/manifest.webmanifest">
-  <meta name="theme-color" content="#0066cc">
+  <meta name="theme-color" content="#007AFF">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="/roamwise-app/icons/icon-192.png">
-  
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  
-  <!-- Leaflet JS (MUST be before app.js) -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-    defer
-  ></script>
 
-  <!-- Leaflet fallback loader -->
-  <script defer>
-    window.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        if (typeof window.L === 'undefined') {
-          const alt = document.createElement('script');
-          alt.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
-          alt.defer = true;
-          alt.onload = () => console.log('[RW] Loaded Leaflet fallback from jsDelivr');
-          document.head.appendChild(alt);
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
 
-          const altCss = document.createElement('link');
-          altCss.rel = 'stylesheet';
-          altCss.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';
-          document.head.appendChild(altCss);
-        }
-      }, 300);
-    });
-  </script>
-  
   <style>
-    /* Prevent flash of unstyled content */
-    body { 
-      opacity: 0; 
-      transition: opacity 0.3s;
-      margin: 0;
-      font-family: 'Rubik', system-ui, sans-serif;
-      background: #f8fafc;
+    /* iOS 26 Design System - Cutting Edge */
+    :root {
+      /* Colors - Dynamic Island inspired */
+      --primary: #007AFF;
+      --primary-dark: #0051D5;
+      --secondary: #5856D6;
+      --accent: #FF2D55;
+      --success: #34C759;
+      --warning: #FF9500;
+
+      /* Backgrounds - Glassmorphism */
+      --bg-primary: #F5F5F7;
+      --bg-secondary: #FFFFFF;
+      --bg-tertiary: rgba(255, 255, 255, 0.7);
+      --bg-glass: rgba(255, 255, 255, 0.6);
+      --bg-glass-strong: rgba(255, 255, 255, 0.85);
+
+      /* Text */
+      --text-primary: #1D1D1F;
+      --text-secondary: #6E6E73;
+      --text-tertiary: #86868B;
+
+      /* Shadows - Depth */
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
+      --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.15);
+
+      /* Radius */
+      --radius-sm: 12px;
+      --radius-md: 20px;
+      --radius-lg: 28px;
+      --radius-xl: 40px;
+
+      /* Spacing */
+      --space-xs: 8px;
+      --space-sm: 12px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+
+      /* Transitions */
+      --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* Blur */
+      --blur-sm: blur(8px);
+      --blur-md: blur(16px);
+      --blur-lg: blur(32px);
     }
-    body.loaded { opacity: 1; }
-    
-    /* Loading screen */
-    .loading-screen {
-      position: fixed;
+
+    [data-theme="dark"] {
+      --primary: #0A84FF;
+      --bg-primary: #000000;
+      --bg-secondary: #1C1C1E;
+      --bg-tertiary: rgba(28, 28, 30, 0.7);
+      --bg-glass: rgba(28, 28, 30, 0.6);
+      --bg-glass-strong: rgba(28, 28, 30, 0.85);
+      --text-primary: #FFFFFF;
+      --text-secondary: #98989D;
+      --text-tertiary: #636366;
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* App Container */
+    #app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    /* Header - Dynamic Island Style */
+    .app-header {
+      position: sticky;
       top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, #0066cc, #3b82f6);
+      z-index: 100;
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-glass-strong);
+      backdrop-filter: var(--blur-md);
+      -webkit-backdrop-filter: var(--blur-md);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .header-logo {
+      font-size: 28px;
+      filter: drop-shadow(0 2px 8px rgba(0, 122, 255, 0.3));
+    }
+
+    .header-actions {
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    .theme-toggle,
+    .install-btn {
+      padding: var(--space-sm) var(--space-md);
+      background: var(--bg-glass);
+      backdrop-filter: var(--blur-sm);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .theme-toggle:hover,
+    .install-btn:hover {
+      transform: scale(1.05);
+      box-shadow: var(--shadow-md);
+      background: var(--bg-glass-strong);
+    }
+
+    .theme-toggle:active,
+    .install-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Main Content Area */
+    .app-main {
+      flex: 1;
+      padding: var(--space-lg);
+      padding-bottom: 100px; /* Space for bottom nav */
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* View Switching - CRITICAL FIX */
+    .app-view {
+      display: none;
+      animation: fadeIn var(--transition-base);
+    }
+
+    .app-view.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* View Header */
+    .view-header {
+      margin-bottom: var(--space-xl);
+      text-align: center;
+    }
+
+    .view-header h1 {
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: var(--space-sm);
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .view-header p {
+      font-size: 17px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Cards - Glassmorphism */
+    .card {
+      background: var(--bg-glass-strong);
+      backdrop-filter: var(--blur-md);
+      -webkit-backdrop-filter: var(--blur-md);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all var(--transition-base);
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* Search Form */
+    .search-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+
+    .search-input-group {
+      position: relative;
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    .search-input {
+      flex: 1;
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-glass);
+      backdrop-filter: var(--blur-sm);
+      border: 2px solid rgba(0, 122, 255, 0.1);
+      border-radius: var(--radius-lg);
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--text-primary);
+      transition: all var(--transition-fast);
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+      transform: scale(1.01);
+    }
+
+    .search-btn {
+      padding: var(--space-md) var(--space-xl);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border: none;
+      border-radius: var(--radius-lg);
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-md);
+    }
+
+    .search-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .search-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Quick Categories */
+    .quick-categories {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: var(--space-md);
+    }
+
+    .category-btn {
+      padding: var(--space-md);
+      background: var(--bg-glass);
+      backdrop-filter: var(--blur-sm);
+      border: 2px solid rgba(0, 122, 255, 0.1);
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-align: center;
+    }
+
+    .category-btn:hover {
+      background: var(--primary);
+      color: white;
+      transform: scale(1.05);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Trip Planning */
+    .trip-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xl);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .form-group label {
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+    }
+
+    .duration-options,
+    .interests-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: var(--space-sm);
+    }
+
+    .duration-btn,
+    .interest-btn {
+      padding: var(--space-md);
+      background: var(--bg-glass);
+      backdrop-filter: var(--blur-sm);
+      border: 2px solid rgba(0, 0, 0, 0.05);
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-align: center;
+    }
+
+    .duration-btn:hover,
+    .interest-btn:hover {
+      transform: scale(1.03);
+      border-color: var(--primary);
+    }
+
+    .duration-btn.selected,
+    .interest-btn.selected {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border-color: transparent;
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Budget Slider */
+    .budget-slider {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-lg);
+      background: var(--bg-glass);
+      backdrop-filter: var(--blur-sm);
+      border-radius: var(--radius-md);
+    }
+
+    .budget-slider input[type="range"] {
+      flex: 1;
+      height: 8px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 999px;
+      outline: none;
+      appearance: none;
+    }
+
+    .budget-slider input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      background: white;
+      border-radius: 50%;
+      border: 4px solid var(--primary);
+      cursor: pointer;
+      box-shadow: var(--shadow-md);
+      transition: all var(--transition-fast);
+    }
+
+    .budget-slider input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .budget-display {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary);
+      min-width: 100px;
+      text-align: right;
+    }
+
+    .generate-btn {
+      padding: var(--space-lg);
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: var(--radius-lg);
+      font-size: 19px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-lg);
+      margin-top: var(--space-md);
+    }
+
+    .generate-btn:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .generate-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* AI Assistant */
+    .ai-interface {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xl);
+    }
+
+    .voice-section {
+      text-align: center;
+      padding: var(--space-xl);
+    }
+
+    .voice-btn {
+      width: 180px;
+      height: 180px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border: none;
+      border-radius: 50%;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow-xl);
+      transition: all var(--transition-base);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .voice-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle, rgba(255,255,255,0.2), transparent);
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+
+    .voice-btn:hover::before {
+      opacity: 1;
+    }
+
+    .voice-btn:hover {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 20px 80px rgba(0, 122, 255, 0.5);
+    }
+
+    .voice-btn:active {
+      transform: scale(0.95);
+    }
+
+    .voice-btn.listening {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.7);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 20px rgba(0, 122, 255, 0);
+      }
+    }
+
+    .voice-icon {
+      font-size: 64px;
+      margin-bottom: var(--space-sm);
+    }
+
+    .voice-text {
       color: white;
-      z-index: 9999;
+      font-size: 15px;
+      font-weight: 700;
     }
-    
-    .loading-logo {
-      font-size: 2rem;
-      margin-bottom: 1rem;
+
+    .voice-status {
+      margin-top: var(--space-lg);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      min-height: 24px;
     }
-    
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(255,255,255,0.3);
-      border-top: 3px solid white;
+
+    .voice-response {
+      margin-top: var(--space-lg);
+      padding: var(--space-lg);
+      background: var(--bg-glass);
+      backdrop-filter: var(--blur-sm);
+      border-radius: var(--radius-md);
+      font-size: 17px;
+      line-height: 1.6;
+      display: none;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      padding: var(--space-lg);
+      background: var(--bg-glass);
+      backdrop-filter: var(--blur-sm);
+      border-radius: var(--radius-lg);
+    }
+
+    .quick-actions h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: var(--space-md);
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: var(--space-md);
+    }
+
+    .action-btn {
+      padding: var(--space-lg) var(--space-md);
+      background: white;
+      border: 2px solid rgba(0, 122, 255, 0.1);
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .action-btn:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Map View */
+    .map-container {
+      height: 70vh;
+      min-height: 500px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+    }
+
+    .location-btn {
+      position: absolute;
+      bottom: var(--space-xl);
+      right: var(--space-lg);
+      z-index: 1000;
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-glass-strong);
+      backdrop-filter: var(--blur-md);
+      border: 2px solid rgba(0, 122, 255, 0.2);
+      border-radius: var(--radius-lg);
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg);
+      transition: all var(--transition-fast);
+    }
+
+    .location-btn:hover {
+      transform: scale(1.1);
+      background: var(--primary);
+      color: white;
+    }
+
+    .map-search {
+      position: absolute;
+      top: var(--space-lg);
+      left: var(--space-lg);
+      right: var(--space-lg);
+      z-index: 1000;
+    }
+
+    .map-search-input {
+      width: 100%;
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-glass-strong);
+      backdrop-filter: var(--blur-md);
+      border: 2px solid rgba(0, 122, 255, 0.1);
+      border-radius: var(--radius-lg);
+      font-size: 17px;
+      font-weight: 500;
+      outline: none;
+      box-shadow: var(--shadow-lg);
+      transition: all var(--transition-fast);
+    }
+
+    .map-search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1), var(--shadow-lg);
+    }
+
+    /* Profile View */
+    .profile-content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xl);
+    }
+
+    .stats-section,
+    .settings-section {
+      padding: var(--space-xl);
+      background: var(--bg-glass);
+      backdrop-filter: var(--blur-sm);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stats-section h3,
+    .settings-section h3 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: var(--space-lg);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--space-lg);
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: var(--space-lg);
+      background: white;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stat-number {
+      font-size: 48px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      margin-top: var(--space-sm);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .setting-item {
+      padding: var(--space-md) 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+
+    .setting-item label {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      font-size: 17px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .setting-item input[type="checkbox"] {
+      width: 52px;
+      height: 32px;
+      appearance: none;
+      background: #E9E9EA;
+      border-radius: 999px;
+      position: relative;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .setting-item input[type="checkbox"]::before {
+      content: '';
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      background: white;
       border-radius: 50%;
-      animation: spin 1s linear infinite;
+      top: 2px;
+      left: 2px;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
     }
-    
+
+    .setting-item input[type="checkbox"]:checked {
+      background: var(--success);
+    }
+
+    .setting-item input[type="checkbox"]:checked::before {
+      transform: translateX(20px);
+    }
+
+    /* Bottom Navigation - iOS 26 Style */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: var(--space-sm) var(--space-lg) calc(var(--space-lg) + env(safe-area-inset-bottom));
+      background: var(--bg-glass-strong);
+      backdrop-filter: var(--blur-lg);
+      -webkit-backdrop-filter: var(--blur-lg);
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 100;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: var(--space-sm);
+      background: none;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      color: var(--text-secondary);
+      flex: 1;
+      max-width: 80px;
+    }
+
+    .nav-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .nav-btn.active {
+      color: var(--primary);
+    }
+
+    .nav-btn.active .nav-icon {
+      transform: scale(1.2);
+    }
+
+    .nav-icon {
+      font-size: 26px;
+      transition: transform var(--transition-fast);
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    /* Loading Screen */
+    .loading-screen {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeOut 0.5s forwards 1s;
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+
+    .loading-logo {
+      font-size: 64px;
+      margin-bottom: var(--space-lg);
+      animation: bounce 1s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    
-    .error-screen {
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      text-align: center;
-      padding: 2rem;
-    }
-    
-    .error-screen h1 {
-      color: #ef4444;
-      margin-bottom: 1rem;
-    }
-    
-    .error-screen button {
-      background: #3b82f6;
+
+    .loading-text {
+      margin-top: var(--space-lg);
       color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      font-size: 1rem;
+      font-size: 17px;
+      font-weight: 600;
+      opacity: 0.8;
     }
-    
-    /* Map container height */
-    #map { 
-      height: 70vh; 
-      width: 100%;
-      position: relative;
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .app-main {
+        padding: var(--space-md);
+      }
+
+      .view-header h1 {
+        font-size: 28px;
+      }
+
+      .quick-categories,
+      .action-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .voice-btn {
+        width: 140px;
+        height: 140px;
+      }
+
+      .voice-icon {
+        font-size: 48px;
+      }
+    }
+
+    /* Hide elements by default */
+    .hidden {
+      display: none !important;
+    }
+
+    /* Results */
+    #searchResults,
+    #tripResults {
+      margin-top: var(--space-xl);
+      display: grid;
+      gap: var(--space-md);
+    }
+
+    .result-card {
+      padding: var(--space-lg);
+      background: var(--bg-glass);
+      backdrop-filter: var(--blur-sm);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-fast);
+    }
+
+    .result-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
     }
   </style>
 </head>
 <body>
   <!-- Loading Screen -->
   <div id="loadingScreen" class="loading-screen">
-    <div class="loading-logo">🧭 Traveling</div>
+    <div class="loading-logo">🧭</div>
     <div class="loading-spinner"></div>
-    <p style="margin-top: 1rem; opacity: 0.8;">Loading your travel companion...</p>
+    <p class="loading-text">Loading your travel companion...</p>
   </div>
 
-  <!-- Error Screen -->
-  <div id="errorScreen" class="error-screen" id="fail-panel">
-    <h1>⚠️ Failed to Load</h1>
-    <p style="color: #64748b; margin-bottom: 1rem;">
-      There was an error loading the Traveling app. Please check your connection and try again.
-    </p>
-    <p id="fail-msg" style="color: #ef4444; font-family: monospace; font-size: 0.9rem; margin-bottom: 2rem;"></p>
-    <button onclick="window.location.reload()">Reload App</button>
-  </div>
-
-  <!-- Main App Container -->
+  <!-- Main App -->
   <div id="app" style="display: none;">
     <!-- Header -->
     <header class="app-header">
@@ -165,18 +946,18 @@
           <h1>🔍 Find Places</h1>
           <p>Discover amazing places around you</p>
         </div>
-        
+
         <div class="search-form">
           <div class="search-input-group">
-            <input 
-              type="text" 
-              id="searchInput" 
+            <input
+              type="text"
+              id="freeText"
               placeholder="What are you looking for?"
               class="search-input"
             >
             <button id="searchBtn" class="search-btn">Search</button>
           </div>
-          
+
           <div class="quick-categories">
             <button class="category-btn" data-category="restaurant">🍽️ Food</button>
             <button class="category-btn" data-category="attraction">🏛️ Sights</button>
@@ -184,8 +965,8 @@
             <button class="category-btn" data-category="entertainment">🎯 Fun</button>
           </div>
         </div>
-        
-        <div id="searchResults" class="search-results"></div>
+
+        <div id="searchResults"></div>
       </section>
 
       <!-- Trip Planning View -->
@@ -194,7 +975,7 @@
           <h1>🗺️ Plan Your Trip</h1>
           <p>AI-powered trip planning with weather awareness</p>
         </div>
-        
+
         <div class="trip-form">
           <div class="form-group">
             <label>Trip Duration</label>
@@ -204,7 +985,7 @@
               <button class="duration-btn" data-duration="16">Weekend</button>
             </div>
           </div>
-          
+
           <div class="form-group">
             <label>Interests (max 4)</label>
             <div class="interests-grid">
@@ -216,21 +997,22 @@
               <button class="interest-btn" data-interest="relaxation">😌 Relaxation</button>
             </div>
           </div>
-          
+
           <div class="form-group">
             <label>Budget per person</label>
             <div class="budget-slider">
-              <input type="range" id="budgetRange" min="50" max="1000" value="300">
+              <input type="range" id="budgetRange" min="50" max="1000" value="300" step="50">
               <div class="budget-display">$<span id="budgetAmount">300</span></div>
             </div>
           </div>
-          
+
           <button id="generateTripBtn" class="generate-btn">
             🤖 Generate Smart Trip
           </button>
         </div>
-        
-        <div id="tripResults" class="trip-results" style="display: none;"></div>
+
+        <div id="tripResults"></div>
+        <div id="enhancedTripDisplay"></div>
       </section>
 
       <!-- AI Assistant View -->
@@ -239,7 +1021,7 @@
           <h1>🤖 AI Assistant</h1>
           <p>Voice-powered travel companion</p>
         </div>
-        
+
         <div class="ai-interface">
           <div class="voice-section">
             <button id="voiceBtn" class="voice-btn">
@@ -249,14 +1031,14 @@
             <div id="voiceStatus" class="voice-status"></div>
             <div id="voiceResponse" class="voice-response"></div>
           </div>
-          
+
           <div class="quick-actions">
             <h3>Quick Actions</h3>
             <div class="action-grid">
-              <button class="action-btn" data-action="find-food">Find Food</button>
-              <button class="action-btn" data-action="weather">Check Weather</button>
-              <button class="action-btn" data-action="navigate">Get Directions</button>
-              <button class="action-btn" data-action="recommend">Recommendations</button>
+              <button class="action-btn" data-action="find-food">🍽️ Find Food</button>
+              <button class="action-btn" data-action="weather">⛅ Weather</button>
+              <button class="action-btn" data-action="navigate">🧭 Directions</button>
+              <button class="action-btn" data-action="recommend">✨ Recommendations</button>
             </div>
           </div>
         </div>
@@ -265,11 +1047,11 @@
       <!-- Map View -->
       <section id="mapView" class="app-view" data-view="map">
         <div id="map" class="map-container"></div>
-        
+
         <button id="locationBtn" class="location-btn">
           📍 My Location
         </button>
-        
+
         <div class="map-search">
           <input type="text" placeholder="Search on map..." class="map-search-input">
         </div>
@@ -281,7 +1063,7 @@
           <h1>👤 Profile</h1>
           <p>Your travel preferences and history</p>
         </div>
-        
+
         <div class="profile-content">
           <div class="stats-section">
             <h3>Your Stats</h3>
@@ -296,19 +1078,19 @@
               </div>
             </div>
           </div>
-          
+
           <div class="settings-section">
             <h3>Settings</h3>
             <div class="setting-item">
               <label>
                 <input type="checkbox" id="voiceEnabled" checked>
-                Voice Guidance
+                <span>Voice Guidance</span>
               </label>
             </div>
             <div class="setting-item">
               <label>
                 <input type="checkbox" id="weatherAware" checked>
-                Weather-Aware Planning
+                <span>Weather-Aware Planning</span>
               </label>
             </div>
           </div>
@@ -342,24 +1124,17 @@
   </div>
 
   <!-- Scripts -->
+  <div id="list" style="display:none;"></div>
   <script src="/roamwise-app/app-main.js" defer></script>
-  <script src="/roamwise-app/app.js?v=14" defer></script>
+  <script src="/roamwise-app/app.js?v=15" defer></script>
 
-  
   <script>
-    // Show app when loaded and hide loading screen
+    // Show app when loaded
     document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        document.body.classList.add('loaded');
-      }, 1500);
-    });
-    
-    // Error handling
-    window.addEventListener('error', () => {
-      document.getElementById('loadingScreen').style.display = 'none';
-      document.getElementById('errorScreen').style.display = 'flex';
+        document.getElementById('app').style.display = 'flex';
+      }, 1200);
     });
   </script>
 </body>
