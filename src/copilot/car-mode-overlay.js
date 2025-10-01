@@ -3,6 +3,8 @@
 // Vanilla JS class with DOM manipulation (no React/JSX)
 
 import { flags } from '../lib/flags.js';
+import { executeAccept } from './actions.js';
+import { contextStream } from './context-stream.js';
 
 /**
  * @typedef {import('./suggestion-types.js').Suggestion} Suggestion
@@ -271,11 +273,22 @@ export class CarModeOverlay {
    * Handle Accept button click
    * @private
    */
-  handleAcceptClick() {
+  async handleAcceptClick() {
     if (!this.currentSuggestion) return;
     const { id, kind } = this.currentSuggestion;
     console.info('[CarModeOverlay] User accepted:', kind);
+
+    // Call recommender accept handler
     this.onAccept(id, kind);
+
+    // Execute action if copilotExec flag enabled
+    try {
+      const lastFix = contextStream.getLastFix();
+      await executeAccept(this.currentSuggestion, lastFix);
+    } catch (err) {
+      console.error('[CarModeOverlay] Action execution failed:', err);
+    }
+
     this.hide();
   }
 

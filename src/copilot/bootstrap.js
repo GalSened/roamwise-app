@@ -2,6 +2,7 @@ import { flags } from '../lib/flags.js';
 import { ContextEngine } from './context-engine.js';
 import { Recommender } from './recommender.js';
 import { sugStream } from './sug-stream.js';
+import { contextStream } from './context-stream.js';
 
 // Singleton instances
 let engine = null;
@@ -36,6 +37,11 @@ export async function startCopilotContext() {
     console.info('[Copilot] Starting recommender...');
     recommender = new Recommender(engine);
     recommender.start();
+
+    // Subscribe to context frames (for action dispatcher GPS access)
+    engine.on((frame) => {
+      contextStream.push(frame);
+    });
 
     // Subscribe to suggestions
     recommender.on((suggestions) => {

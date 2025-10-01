@@ -34,4 +34,11 @@ export const flags = {
       return false;
     }
   },
+  get copilotExec() {
+    try {
+      return localStorage.getItem('copilotExec') === '1';
+    } catch {
+      return false;
+    }
+  },
 };
