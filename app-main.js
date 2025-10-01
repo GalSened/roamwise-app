@@ -234,7 +234,8 @@ class SimpleNavigation {
 
         generateBtn.textContent = '🧠 AI Thinking...';
         generateBtn.disabled = true;
-          
+
+        try {
           // Call Personal AI for recommendations
           const response = await fetch('https://premium-hybrid-473405-g7.uc.r.appspot.com/api/ai/recommend', {
             method: 'POST',
