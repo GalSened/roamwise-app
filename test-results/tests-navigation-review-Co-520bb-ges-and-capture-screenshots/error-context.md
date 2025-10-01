@@ -1,0 +1,42 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+    - banner [ref=e3]:
+        - generic [ref=e4]:
+            - generic [ref=e5]: 🧭
+            - generic [ref=e6]: Traveling
+        - generic [ref=e7]:
+            - button "🌓" [ref=e8] [cursor=pointer]
+            - button "Install" [ref=e9] [cursor=pointer]
+    - main [ref=e10]:
+        - generic [ref=e11]:
+            - generic [ref=e12]:
+                - heading "🔍 Find Places" [level=1] [ref=e13]
+                - paragraph [ref=e14]: Discover amazing places around you
+            - generic [ref=e15]:
+                - generic [ref=e16]:
+                    - textbox "What are you looking for?" [ref=e17]: coffee shops
+                    - button "Search" [ref=e18] [cursor=pointer]
+                - generic [ref=e19]:
+                    - button "🍽️ Food" [ref=e20] [cursor=pointer]
+                    - button "🏛️ Sights" [ref=e21] [cursor=pointer]
+                    - button "🛍️ Shopping" [ref=e22] [cursor=pointer]
+                    - button "🎯 Fun" [ref=e23] [cursor=pointer]
+    - navigation [ref=e24]:
+        - button "🔍 Search" [ref=e25] [cursor=pointer]:
+            - generic [ref=e26] [cursor=pointer]: 🔍
+            - generic [ref=e27] [cursor=pointer]: Search
+        - button "🤖 AI" [active] [ref=e28] [cursor=pointer]:
+            - generic [ref=e29] [cursor=pointer]: 🤖
+            - generic [ref=e30] [cursor=pointer]: AI
+        - button "🗺️ Trip" [ref=e31] [cursor=pointer]:
+            - generic [ref=e32] [cursor=pointer]: 🗺️
+            - generic [ref=e33] [cursor=pointer]: Trip
+        - button "📍 Map" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35] [cursor=pointer]: 📍
+            - generic [ref=e36] [cursor=pointer]: Map
+        - button "👤 Profile" [ref=e37] [cursor=pointer]:
+            - generic [ref=e38] [cursor=pointer]: 👤
+            - generic [ref=e39] [cursor=pointer]: Profile
+```

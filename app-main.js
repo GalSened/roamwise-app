@@ -23,7 +23,7 @@ class SimpleNavigation {
     console.log('Found nav buttons:', navButtons.length);
     console.log('Found views:', views.length);
 
-    navButtons.forEach(button => {
+    navButtons.forEach((button) => {
       button.addEventListener('click', () => {
         const targetView = button.getAttribute('data-view');
         console.log('Navigation clicked:', targetView);
@@ -34,10 +34,10 @@ class SimpleNavigation {
 
   showView(viewName) {
     console.log('Showing view:', viewName);
-    
+
     // Hide all views
     const views = document.querySelectorAll('.app-view');
-    views.forEach(view => {
+    views.forEach((view) => {
       view.classList.remove('active');
     });
 
@@ -52,7 +52,7 @@ class SimpleNavigation {
 
     // Update navigation buttons
     const navButtons = document.querySelectorAll('.nav-btn');
-    navButtons.forEach(button => {
+    navButtons.forEach((button) => {
       button.classList.remove('active');
       if (button.getAttribute('data-view') === viewName) {
         button.classList.add('active');
@@ -81,7 +81,7 @@ class SimpleNavigation {
 
   setupFormInteractions() {
     console.log('Setting up form interactions...');
-    
+
     // Budget slider
     const budgetSlider = document.getElementById('budgetRange');
     const budgetAmount = document.getElementById('budgetAmount');
@@ -92,15 +92,15 @@ class SimpleNavigation {
     }
 
     // Duration options
-    document.querySelectorAll('.duration-btn').forEach(option => {
+    document.querySelectorAll('.duration-btn').forEach((option) => {
       option.addEventListener('click', () => {
-        document.querySelectorAll('.duration-btn').forEach(o => o.classList.remove('selected'));
+        document.querySelectorAll('.duration-btn').forEach((o) => o.classList.remove('selected'));
         option.classList.add('selected');
       });
     });
 
     // Interest options
-    document.querySelectorAll('.interest-btn').forEach(option => {
+    document.querySelectorAll('.interest-btn').forEach((option) => {
       option.addEventListener('click', () => {
         const selected = document.querySelectorAll('.interest-btn.selected');
         if (option.classList.contains('selected')) {
@@ -125,10 +125,10 @@ class SimpleNavigation {
     console.log('Setting up search - Button:', !!searchBtn, 'Input:', !!searchInput);
 
     // Category buttons
-    document.querySelectorAll('.category-btn').forEach(btn => {
+    document.querySelectorAll('.category-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         // Toggle selected state
-        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.category-btn').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
 
         // Get category and search
@@ -146,29 +146,34 @@ class SimpleNavigation {
           console.log('Searching with Personal AI for:', query);
           searchBtn.textContent = 'AI Searching...';
           searchBtn.disabled = true;
-          
+
           try {
             // Use Personal AI for intelligent search
-            const response = await fetch('https://premium-hybrid-473405-g7.uc.r.appspot.com/api/intelligence/search', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                query: query,
-                location: 'Current Location',
-                preferences: {
-                  budgetCategory: 'mid_range',
-                  destinationTypes: ['urban', 'cultural'],
-                  activityPreferences: ['food', 'sightseeing']
-                }
-              })
-            });
+            const response = await fetch(
+              'https://premium-hybrid-473405-g7.uc.r.appspot.com/api/intelligence/search',
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  query: query,
+                  location: 'Current Location',
+                  preferences: {
+                    budgetCategory: 'mid_range',
+                    destinationTypes: ['urban', 'cultural'],
+                    activityPreferences: ['food', 'sightseeing'],
+                  },
+                }),
+              }
+            );
 
             const data = await response.json();
             const resultsList = document.getElementById('list');
             resultsList.style.display = 'block'; // Show results
 
             if (data.results && data.results.length > 0) {
-              resultsList.innerHTML = data.results.map(result => `
+              resultsList.innerHTML = data.results
+                .map(
+                  (result) => `
                 <div class="search-result ai-powered">
                   <h3>🤖 ${result.name}</h3>
                   <p>${result.description}</p>
@@ -176,7 +181,9 @@ class SimpleNavigation {
                   <div class="ai-reason">${result.personalizedReason}</div>
                   <div class="ai-tags">${result.personalizedTags?.join(', ') || ''}</div>
                 </div>
-              `).join('');
+              `
+                )
+                .join('');
             } else {
               resultsList.innerHTML = `
                 <div class="search-result">
@@ -198,7 +205,7 @@ class SimpleNavigation {
               </div>
             `;
           }
-          
+
           searchBtn.textContent = 'Search';
           searchBtn.disabled = false;
         }
@@ -215,8 +222,11 @@ class SimpleNavigation {
         console.log('Generating AI-powered trip...');
 
         // Collect user preferences
-        const selectedDuration = document.querySelector('.duration-btn.selected')?.textContent || 'Full day';
-        const selectedInterests = Array.from(document.querySelectorAll('.interest-btn.selected')).map(el => el.textContent);
+        const selectedDuration =
+          document.querySelector('.duration-btn.selected')?.textContent || 'Full day';
+        const selectedInterests = Array.from(
+          document.querySelectorAll('.interest-btn.selected')
+        ).map((el) => el.textContent);
         const budget = document.getElementById('budgetAmount')?.textContent || '300';
 
         // Validate that at least one interest is selected
@@ -237,27 +247,30 @@ class SimpleNavigation {
 
         try {
           // Call Personal AI for recommendations
-          const response = await fetch('https://premium-hybrid-473405-g7.uc.r.appspot.com/api/ai/recommend', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              preferences: {
-                duration: selectedDuration,
-                interests: selectedInterests,
-                budget: parseInt(budget),
-                destinationType: 'mixed',
-                activities: selectedInterests
-              },
-              context: {
-                userId: 'personal',
-                location: 'Current Location',
-                requestType: 'trip_planning'
-              }
-            })
-          });
-          
+          const response = await fetch(
+            'https://premium-hybrid-473405-g7.uc.r.appspot.com/api/ai/recommend',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                preferences: {
+                  duration: selectedDuration,
+                  interests: selectedInterests,
+                  budget: parseInt(budget),
+                  destinationType: 'mixed',
+                  activities: selectedInterests,
+                },
+                context: {
+                  userId: 'personal',
+                  location: 'Current Location',
+                  requestType: 'trip_planning',
+                },
+              }),
+            }
+          );
+
           const data = await response.json();
-          
+
           if (data.recommendations) {
             tripDisplay.innerHTML = `
               <div class="trip-result ai-powered">
@@ -292,7 +305,6 @@ class SimpleNavigation {
           } else {
             throw new Error('No recommendations received');
           }
-          
         } catch (error) {
           console.error('AI Trip generation error:', error);
           tripDisplay.innerHTML = `
@@ -316,7 +328,7 @@ class SimpleNavigation {
             </div>
           `;
         }
-        
+
         generateBtn.textContent = '🤖 Generate Smart Trip';
         generateBtn.disabled = false;
       });
@@ -385,7 +397,7 @@ class SimpleNavigation {
       const responseEl = document.getElementById('voiceResponse');
 
       let errorMessage = '';
-      switch(event.error) {
+      switch (event.error) {
         case 'no-speech':
           errorMessage = '❌ No speech detected. Please try again.';
           break;
@@ -465,7 +477,11 @@ class SimpleNavigation {
     console.log('Processing command:', lowerTranscript);
 
     // Parse voice commands and execute actions
-    if (lowerTranscript.includes('search for') || lowerTranscript.includes('find') || lowerTranscript.includes('look for')) {
+    if (
+      lowerTranscript.includes('search for') ||
+      lowerTranscript.includes('find') ||
+      lowerTranscript.includes('look for')
+    ) {
       // Extract search query
       let query = lowerTranscript
         .replace('search for', '')
@@ -485,7 +501,11 @@ class SimpleNavigation {
           }
         }, 300);
       }
-    } else if (lowerTranscript.includes('food') || lowerTranscript.includes('restaurant') || lowerTranscript.includes('eat')) {
+    } else if (
+      lowerTranscript.includes('food') ||
+      lowerTranscript.includes('restaurant') ||
+      lowerTranscript.includes('eat')
+    ) {
       this.showView('search');
       setTimeout(() => {
         const searchInput = document.getElementById('freeText');
@@ -495,7 +515,10 @@ class SimpleNavigation {
           searchBtn.click();
         }
       }, 300);
-    } else if (lowerTranscript.includes('plan') && (lowerTranscript.includes('trip') || lowerTranscript.includes('vacation'))) {
+    } else if (
+      lowerTranscript.includes('plan') &&
+      (lowerTranscript.includes('trip') || lowerTranscript.includes('vacation'))
+    ) {
       this.showView('trip');
     } else if (lowerTranscript.includes('generate') && lowerTranscript.includes('trip')) {
       this.showView('trip');
@@ -505,7 +528,11 @@ class SimpleNavigation {
           generateBtn.click();
         }
       }, 500);
-    } else if (lowerTranscript.includes('map') || lowerTranscript.includes('navigation') || lowerTranscript.includes('location')) {
+    } else if (
+      lowerTranscript.includes('map') ||
+      lowerTranscript.includes('navigation') ||
+      lowerTranscript.includes('location')
+    ) {
       this.showView('map');
     } else if (lowerTranscript.includes('weather')) {
       this.showView('map');
@@ -539,12 +566,12 @@ class SimpleNavigation {
   }
 
   setupQuickActions() {
-    document.querySelectorAll('.action-btn').forEach(btn => {
+    document.querySelectorAll('.action-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const action = btn.getAttribute('data-action');
 
         // Switch to appropriate view and trigger action
-        switch(action) {
+        switch (action) {
           case 'find-food':
             // Go to search view and search for food
             this.showView('search');
@@ -594,11 +621,12 @@ class SimpleNavigation {
       // Add OpenStreetMap tiles
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
+        attribution: '© OpenStreetMap contributors',
       }).addTo(this.map);
 
       // Add a marker for current location
-      this.userMarker = L.marker([32.0853, 34.7818]).addTo(this.map)
+      this.userMarker = L.marker([32.0853, 34.7818])
+        .addTo(this.map)
         .bindPopup('Your Location')
         .openPopup();
 

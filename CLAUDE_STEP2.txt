@@ -1,0 +1,15 @@
+Read SPEC.md, spec/PLAN.md, and spec/TASKS.csv.
+
+Constraints:
+- DO NOT modify existing app features or UX in this step.
+- Only propose a small PR that adds:
+  1) docs/ARCHITECTURE.md (1 page mirroring /plan)
+  2) .github/workflows/ci.yml (build+lint; no E2E yet if missing)
+  3) docs/RUNBOOK.md (how to run dev/build/test locally)
+- Branch name suggestion: docs/spec-sync
+- Keep dependencies minimal.
+
+Deliverables:
+- Show the diff for those new/updated files only.
+- Short checklist I can verify locally (2–3 bullets).
+- Stop after preparing the PR. Wait for my review.
