@@ -7,6 +7,7 @@ import { saveItinerary, loadItinerary } from './src/lib/itinerary.js';
 import { mountUpdateBanner } from './src/lib/update-banner.js';
 import { mountDevDrawer } from './src/lib/dev-drawer.js';
 import { flags } from './src/lib/flags.js';
+import { startCopilotContext } from './src/copilot/bootstrap.js';
 
 class SimpleNavigation {
   constructor() {
@@ -23,6 +24,7 @@ class SimpleNavigation {
     this.setupWeather(); // Wire weather API client
     this.setupItinerary(); // Wire itinerary save/load
     this.setupMap(); // Initialize map
+    startCopilotContext(); // Wire context engine (flag-gated)
     this.showView('search');
   }
 

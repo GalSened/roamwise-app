@@ -13,4 +13,11 @@ export const flags = {
       return false;
     }
   },
+  get copilot() {
+    try {
+      return localStorage.getItem('copilot') === '1';
+    } catch {
+      return false;
+    }
+  },
 };
