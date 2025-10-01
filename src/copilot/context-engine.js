@@ -1,5 +1,6 @@
 import { CtxBus } from './context-types.js';
 import { flags } from '../lib/flags.js';
+import { getPrefs } from './prefs-stream.js';
 
 // ---- Constants ----
 const MS = {
@@ -250,11 +251,15 @@ export class ContextEngine {
       return;
     }
 
+    // Get current user preferences (if logged in)
+    const prefs = getPrefs();
+
     // Create and emit context frame
     const frame = {
       ts: now,
       fix,
       localTime: new Date(now).toISOString(),
+      prefs, // Include user preferences (null if not logged in)
     };
 
     this.bus.emit(frame);

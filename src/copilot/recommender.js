@@ -160,7 +160,7 @@ export class Recommender {
     if (valid.length === 0) return;
 
     // Rank and take top MAX_SUGGESTIONS
-    const ranked = this.rank(valid, this.mem);
+    const ranked = this.rank(valid, this.mem, frame.prefs);
     const suggestions = ranked.slice(0, MAX_SUGGESTIONS);
 
     if (suggestions.length > 0) {
@@ -175,15 +175,30 @@ export class Recommender {
    * @private
    * @param {import('./suggestion-types.js').Suggestion[]} candidates
    * @param {BanditMem} mem
+   * @param {Object|null} prefs - User preferences (null if not logged in)
    * @returns {import('./suggestion-types.js').Suggestion[]}
    */
-  rank(candidates, mem) {
-    // Score = base + (accept - reject) * 0.6 + exploration noise
+  rank(candidates, mem, prefs = null) {
+    // Score = base + (accept - reject) * 0.6 + exploration noise + preferences
     return candidates
       .map((c) => {
         const accept = mem.accept[c.kind] || 0;
         const reject = mem.reject[c.kind] || 0;
-        const score = 1 + (accept - reject) * 0.6 + Math.random() * 0.03;
+        let score = 1 + (accept - reject) * 0.6 + Math.random() * 0.03;
+
+        // Apply preferences bonus/penalty (if logged in)
+        if (prefs) {
+          if (prefs.likes && prefs.likes.includes(c.kind)) {
+            score += 0.5; // Boost liked categories
+          }
+          if (prefs.avoid && prefs.avoid.includes(c.kind)) {
+            score -= 0.8; // Penalize avoided categories
+          }
+          if (prefs.dietary && prefs.dietary.length > 0 && c.kind === 'food') {
+            score -= 0.1; // Small penalty for food if dietary restrictions exist
+          }
+        }
+
         return { score, suggestion: c };
       })
       .sort((a, b) => b.score - a.score)

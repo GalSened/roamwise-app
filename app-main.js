@@ -14,6 +14,9 @@ import { ResultsDrawer } from './src/copilot/results-drawer.js';
 import { onNavigate } from './src/copilot/nav-bus.js';
 import { registerMap, focus, drawRoute, clearRoute } from './src/map/map-adapter.js';
 import { computeTempRoute } from './src/routes/route-exec.js';
+import { createDevLogin } from './src/components/DevLogin.js';
+import { getProfile } from './src/lib/api-auth.js';
+import { setPrefs, clearPrefs } from './src/copilot/prefs-stream.js';
 
 class SimpleNavigation {
   constructor() {
@@ -23,6 +26,7 @@ class SimpleNavigation {
 
   init() {
     console.log('Initializing navigation...');
+    this.setupDevLogin(); // Mount DevLogin component and handle auth events
     this.setupNavigation();
     this.setupThemeToggle();
     this.setupFormInteractions(); // Add this to ensure search works
@@ -35,6 +39,46 @@ class SimpleNavigation {
     this.setupResultsDrawer(); // Wire results drawer (flag-gated)
     this.setupNavigateHandler(); // Wire navigate event handler
     this.showView('search');
+  }
+
+  setupDevLogin() {
+    console.log('[DevLogin] Mounting login component...');
+
+    try {
+      // Create and mount DevLogin component
+      const loginComponent = createDevLogin();
+      document.body.appendChild(loginComponent);
+
+      // Handle login event: load profile and set preferences
+      window.addEventListener('userLoggedIn', async (event) => {
+        const user = event.detail;
+        console.log('[DevLogin] User logged in:', user);
+
+        try {
+          // Fetch user profile from backend
+          const profileData = await getProfile();
+          console.log('[DevLogin] Profile loaded:', profileData);
+
+          // Set preferences in prefs-stream (context engine will pick it up)
+          if (profileData.preferences) {
+            setPrefs(profileData.preferences);
+            console.log('[DevLogin] Preferences set:', profileData.preferences);
+          }
+        } catch (error) {
+          console.error('[DevLogin] Failed to load profile:', error);
+        }
+      });
+
+      // Handle logout event: clear preferences
+      window.addEventListener('userLoggedOut', () => {
+        console.log('[DevLogin] User logged out');
+        clearPrefs();
+      });
+
+      console.log('[DevLogin] Login component mounted');
+    } catch (error) {
+      console.error('[DevLogin] Failed to setup login component:', error);
+    }
   }
 
   setupNavigation() {

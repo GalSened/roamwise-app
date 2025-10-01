@@ -1,51 +1,25 @@
+import { kvGet } from './kv.js';
+
 export const flags = {
   get offlineCache() {
-    try {
-      return localStorage.getItem('offlineCache') === '1';
-    } catch {
-      return false;
-    }
+    return kvGet('offlineCache') === '1';
   },
   get plannerStub() {
-    try {
-      return localStorage.getItem('plannerStub') === '1';
-    } catch {
-      return false;
-    }
+    return kvGet('plannerStub') === '1';
   },
   get copilot() {
-    try {
-      return localStorage.getItem('copilot') === '1';
-    } catch {
-      return false;
-    }
+    return kvGet('copilot') === '1';
   },
   get copilotUi() {
-    try {
-      return localStorage.getItem('copilotUi') === '1';
-    } catch {
-      return false;
-    }
+    return kvGet('copilotUi') === '1';
   },
   get tts() {
-    try {
-      return localStorage.getItem('tts') === '1';
-    } catch {
-      return false;
-    }
+    return kvGet('tts') === '1';
   },
   get copilotExec() {
-    try {
-      return localStorage.getItem('copilotExec') === '1';
-    } catch {
-      return false;
-    }
+    return kvGet('copilotExec') === '1';
   },
   get copilotNav() {
-    try {
-      return localStorage.getItem('copilotNav') === '1';
-    } catch {
-      return false;
-    }
+    return kvGet('copilotNav') === '1';
   },
 };
