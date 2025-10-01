@@ -172,15 +172,76 @@ Update user preferences
 }
 ```
 
+### Routing (OSRM integration)
+
+#### POST /api/route
+Compute route between stops using OSRM (Open Source Routing Machine).
+
+**Request:**
+```json
+{
+  "stops": [
+    { "lat": 32.0853, "lon": 34.7818 },
+    { "lat": 32.0800, "lon": 34.8000 }
+  ],
+  "mode": "drive"
+}
+```
+
+**Response (Success):**
+```json
+{
+  "ok": true,
+  "distance_m": 1234,
+  "duration_s": 180,
+  "geometry": {
+    "type": "FeatureCollection",
+    "features": [{
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[34.7818, 32.0853], [34.7820, 32.0855], ...]
+      }
+    }]
+  }
+}
+```
+
+**Response (Provider Unavailable):**
+```json
+{
+  "ok": false,
+  "code": "provider_unavailable",
+  "message": "Route provider temporarily unavailable"
+}
+```
+
+**Features:**
+- LRU cache (1000 entries, 5 min TTL by default)
+- Timeout protection (12s default)
+- Circuit breaker (opens on repeated failures)
+- GeoJSON LineString response format
+- Graceful degradation when OSRM is offline
+
+**OSRM Setup:**
+See [OSRM-SETUP.md](./OSRM-SETUP.md) for instructions on running OSRM with Docker.
+
 ## Environment Variables
 
 - `PORT` - Server port (default: 3000)
 - `JWT_SECRET` - Secret for JWT signing (default: dev secret, **change in production**)
+- `OSRM_URL` - OSRM server URL (default: http://localhost:5000)
+- `ROUTE_TIMEOUT_MS` - Route request timeout in milliseconds (default: 12000)
+- `ROUTE_CACHE_TTL_MS` - Route cache TTL in milliseconds (default: 300000 = 5 min)
+- `ROUTE_CACHE_MAX` - Max number of cached routes (default: 1000)
 
 Example:
 ```bash
-PORT=3001 JWT_SECRET=your-secret-here npm start
+PORT=3001 JWT_SECRET=your-secret-here OSRM_URL=http://localhost:5000 npm start
 ```
+
+See `.env.example` for a complete list of environment variables.
 
 ## Frontend Integration
 

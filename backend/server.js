@@ -7,6 +7,7 @@ import cors from 'cors';
 import { migrate } from './db.js';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
+import routeRoutes from './routes/route.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,6 +44,9 @@ app.use('/api/dev', authRoutes);
 
 // Profile routes (requires auth)
 app.use('/api/profile', profileRoutes);
+
+// Route routes (OSRM integration)
+app.use('/api/route', routeRoutes);
 
 // 404 handler
 app.use((req, res) => {
