@@ -10,6 +10,8 @@ import { flags } from './src/lib/flags.js';
 import { startCopilotContext, getCopilotEngine } from './src/copilot/bootstrap.js';
 import { CarModeOverlay } from './src/copilot/car-mode-overlay.js';
 import { sugStream } from './src/copilot/sug-stream.js';
+import { ResultsDrawer } from './src/copilot/results-drawer.js';
+import { onNavigate } from './src/copilot/nav-bus.js';
 
 class SimpleNavigation {
   constructor() {
@@ -28,6 +30,8 @@ class SimpleNavigation {
     this.setupMap(); // Initialize map
     startCopilotContext(); // Wire context engine (flag-gated)
     this.setupCarModeOverlay(); // Wire Car-Mode overlay (flag-gated)
+    this.setupResultsDrawer(); // Wire results drawer (flag-gated)
+    this.setupNavigateHandler(); // Wire navigate event handler
     this.showView('search');
   }
 
@@ -1085,6 +1089,60 @@ class SimpleNavigation {
       console.info('[CarMode] Overlay setup complete');
     } catch (error) {
       console.error('[CarMode] Failed to setup overlay:', error);
+    }
+  }
+
+  setupResultsDrawer() {
+    // Only mount if ALL three flags are enabled
+    if (!flags.copilot || !flags.copilotUi || !flags.copilotExec) {
+      console.log('[ResultsDrawer] Flags OFF, drawer disabled');
+      return;
+    }
+
+    console.info('[ResultsDrawer] Mounting drawer...');
+
+    try {
+      // Create drawer instance
+      this.resultsDrawer = new ResultsDrawer();
+
+      // Mount drawer to DOM
+      this.resultsDrawer.mount();
+
+      console.info('[ResultsDrawer] Drawer setup complete');
+    } catch (error) {
+      console.error('[ResultsDrawer] Failed to setup drawer:', error);
+    }
+  }
+
+  setupNavigateHandler() {
+    console.info('[Navigate] Setting up navigate handler...');
+
+    try {
+      // Subscribe to navigate events
+      onNavigate(({ lat, lon, name, source }) => {
+        console.info('[Navigate] Navigate requested:', { lat, lon, name, source });
+
+        // TODO (Step 21-Pro): Wire to real map/route
+        // For now, just console log
+
+        // Optional: If map exists, center it on the location
+        if (this.map && typeof lat === 'number' && typeof lon === 'number') {
+          console.info('[Navigate] Centering map on:', lat, lon);
+          this.map.setView([lat, lon], 15);
+
+          // Optional: Add a marker
+          if (window.L && window.L.marker) {
+            const marker = window.L.marker([lat, lon]).addTo(this.map);
+            if (name) {
+              marker.bindPopup(name).openPopup();
+            }
+          }
+        }
+      });
+
+      console.info('[Navigate] Navigate handler setup complete');
+    } catch (error) {
+      console.error('[Navigate] Failed to setup handler:', error);
     }
   }
 }
