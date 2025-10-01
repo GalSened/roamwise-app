@@ -1,6 +1,9 @@
 // Simple JavaScript implementation to ensure navigation works
 console.log('Simple app starting...');
 
+// Import API client (feature-flagged offline caching)
+import { apiRoute } from './src/lib/api.js';
+
 class SimpleNavigation {
   constructor() {
     this.currentView = 'search';
@@ -12,6 +15,7 @@ class SimpleNavigation {
     this.setupNavigation();
     this.setupThemeToggle();
     this.setupFormInteractions(); // Add this to ensure search works
+    this.setupRouting(); // Wire routing API client
     this.setupMap(); // Initialize map
     this.showView('search');
   }
@@ -333,6 +337,71 @@ class SimpleNavigation {
         generateBtn.disabled = false;
       });
     }
+  }
+
+  setupRouting() {
+    const getRouteBtn = document.getElementById('getRouteBtn');
+    const routeOrigin = document.getElementById('routeOrigin');
+    const routeDestination = document.getElementById('routeDestination');
+    const routeResults = document.getElementById('routeResults');
+
+    if (!getRouteBtn || !routeOrigin || !routeDestination || !routeResults) {
+      console.log('Route UI elements not found, skipping routing setup');
+      return;
+    }
+
+    getRouteBtn.addEventListener('click', async () => {
+      const origin = routeOrigin.value.trim();
+      const destination = routeDestination.value.trim();
+
+      if (!origin || !destination) {
+        routeResults.innerHTML = `
+          <div class="result-card" style="background: var(--warning-bg, #fff3cd); border-left: 4px solid var(--warning, #ffc107);">
+            <p>⚠️ Please enter both origin and destination</p>
+          </div>
+        `;
+        return;
+      }
+
+      console.log('Getting route from', origin, 'to', destination);
+      getRouteBtn.textContent = '🔄 Finding Route...';
+      getRouteBtn.disabled = true;
+
+      try {
+        // Use apiRoute() which is feature-flagged for offline caching
+        const routeData = await apiRoute({
+          origin: origin,
+          destination: destination,
+          mode: 'driving',
+        });
+
+        console.log('Route data:', routeData);
+
+        // Display route results
+        routeResults.innerHTML = `
+          <div class="result-card" style="background: var(--bg-glass); border-left: 4px solid var(--primary);">
+            <h4>🗺️ Route Found!</h4>
+            <p><strong>From:</strong> ${origin}</p>
+            <p><strong>To:</strong> ${destination}</p>
+            <p><strong>Distance:</strong> ${routeData.distance || 'N/A'}</p>
+            <p><strong>Duration:</strong> ${routeData.duration || 'N/A'}</p>
+            ${routeData.offline ? '<p style="font-size: 0.9em; opacity: 0.7;">📦 Served from offline cache</p>' : ''}
+          </div>
+        `;
+      } catch (error) {
+        console.error('Routing error:', error);
+        routeResults.innerHTML = `
+          <div class="result-card" style="background: #ffebee; border-left: 4px solid #f44336;">
+            <h4>❌ Route Not Available</h4>
+            <p>Could not calculate route at this time. This feature requires a backend routing API.</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">💡 Demo: The API client is working, but the backend <code>/api/route</code> endpoint needs to be implemented.</p>
+          </div>
+        `;
+      }
+
+      getRouteBtn.textContent = '🗺️ Get Route';
+      getRouteBtn.disabled = false;
+    });
   }
 
   setupVoiceButton() {

@@ -1148,6 +1148,31 @@
               </div>
             </div>
 
+            <!-- Route Planning (Feature-Flagged) -->
+            <div class="form-group">
+              <label>🚗 Get Directions (Optional)</label>
+              <div style="display: flex; gap: var(--space-sm);">
+                <input
+                  type="text"
+                  id="routeOrigin"
+                  placeholder="From (e.g., Tel Aviv)"
+                  class="search-input"
+                  style="flex: 1;"
+                />
+                <input
+                  type="text"
+                  id="routeDestination"
+                  placeholder="To (e.g., Jerusalem)"
+                  class="search-input"
+                  style="flex: 1;"
+                />
+              </div>
+              <button id="getRouteBtn" class="search-btn" style="margin-top: var(--space-sm); width: 100%;">
+                🗺️ Get Route
+              </button>
+              <div id="routeResults" style="margin-top: var(--space-md);"></div>
+            </div>
+
             <button id="generateTripBtn" class="generate-btn">🤖 Generate Smart Trip</button>
           </div>
 
@@ -1263,7 +1288,7 @@
 
     <!-- Scripts -->
     <div id="list" style="display: none"></div>
-    <script src="/roamwise-app/app-main.js?v=19" defer></script>
+    <script type="module" src="/roamwise-app/app-main.js?v=20"></script>
 
     <script>
       // Show app when loaded
