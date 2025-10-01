@@ -1,8 +1,10 @@
 import { flags } from '../lib/flags.js';
 import { ContextEngine } from './context-engine.js';
+import { Recommender } from './recommender.js';
 
-// Singleton instance
+// Singleton instances
 let engine = null;
+let recommender = null;
 
 /**
  * Start the Context Engine if the copilot flag is enabled
@@ -29,15 +31,27 @@ export async function startCopilotContext() {
     await engine.start();
     console.info('[Copilot] Context engine started successfully');
 
-    // Example: subscribe to context frames for debugging
-    engine.subscribe((frame) => {
-      // In production, this would be consumed by recommender
-      // For now, just log a minimal confirmation
-      console.debug('[Copilot] Context frame emitted');
+    // Start recommender listening to context frames
+    console.info('[Copilot] Starting recommender...');
+    recommender = new Recommender(engine);
+    recommender.start();
+
+    // Subscribe to suggestions for console logging
+    recommender.on((suggestions) => {
+      console.info('[copilot] suggestions ->', suggestions);
     });
+
+    // Expose API for manual testing (dev only)
+    window.__copilot = {
+      accept: (id, kind) => recommender?.accept(id, kind),
+      decline: (id, kind) => recommender?.decline(id, kind),
+    };
+
+    console.info('[Copilot] Recommender started successfully');
   } catch (err) {
     console.error('[Copilot] Failed to start context engine:', err.message);
     engine = null;
+    recommender = null;
   }
 }
 
@@ -50,10 +64,12 @@ export function stopCopilotContext() {
     return;
   }
 
-  console.info('[Copilot] Stopping context engine...');
+  console.info('[Copilot] Stopping context engine and recommender...');
   engine.stop();
   engine = null;
-  console.info('[Copilot] Context engine stopped');
+  recommender = null;
+  delete window.__copilot;
+  console.info('[Copilot] Context engine and recommender stopped');
 }
 
 /**
