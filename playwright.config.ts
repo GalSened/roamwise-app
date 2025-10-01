@@ -11,7 +11,7 @@ function hasScript(name: string) {
 }
 
 const usePreview = hasScript('preview');
-const command = usePreview ? 'npm run preview' : 'npx http-server app -p 5173 -c-1';
+const command = usePreview ? 'npm run preview' : 'npx http-server . -p 5173 -c-1';
 const port = 5173;
 
 export default defineConfig({

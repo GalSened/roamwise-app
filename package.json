@@ -4,7 +4,6 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier -w .",
     "typecheck": "tsc -p tsconfig.base.json",
-    "preview": "vite preview --strictPort --port 5173",
     "e2e": "playwright test"
   },
   "devDependencies": {
