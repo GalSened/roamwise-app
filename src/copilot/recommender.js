@@ -64,15 +64,9 @@ export class Recommender {
       return this.unsubscribe;
     }
 
-    // Subscribe to context frames
-    this.unsubscribe = () => {
-      // ContextEngine uses subscribe/unsubscribe pattern
-      // Store the bound handler to unsubscribe later
-      this.engine.bus.unsubscribe(this.handleFrame);
-    };
-
+    // Subscribe to context frames using on() which returns unsubscribe function
     this.handleFrame = this.handleFrame.bind(this);
-    this.engine.bus.subscribe(this.handleFrame);
+    this.unsubscribe = this.engine.on(this.handleFrame);
 
     console.info('[Recommender] Started listening to context frames');
     return this.unsubscribe;
@@ -161,36 +155,15 @@ export class Recommender {
 function generateCandidates(frame) {
   const out = [];
   const now = Date.now();
-  const geo = frame.geo;
+  const fix = frame.fix;
 
-  if (!geo) return out;
+  if (!fix) return out;
 
   // Determine if user is moving (speed > 8 km/h ~ walking speed)
-  const moving = (geo.speed || 0) > 8;
+  const moving = (fix.speedKph || 0) > 8;
 
-  // Example 1: Weather reroute (mock severe weather check)
-  // In real implementation, check frame.weather.alerts
-  // For now, simulate based on conditions
-  const severe =
-    frame.weather &&
-    (frame.weather.conditions === 'thunderstorm' ||
-      frame.weather.conditions === 'heavy rain');
-
-  if (severe && moving) {
-    out.push({
-      id: `wx_reroute_${Math.floor(now / 60000)}`, // minute-bucket id
-      ts: now,
-      kind: 'weather_reroute',
-      title: 'Severe weather ahead — consider reroute',
-      reason: 'Severe weather alert in your area',
-      expiresAt: now + 10 * 60 * 1000,
-      acceptAction: { type: 'OPEN_REROUTE', payload: { mode: 'avoid_weather' } },
-      declineAction: { type: 'SNOOZE', payload: { minutes: 10 } },
-    });
-  }
-
-  // Example 2: Rest stop every ~2h of driving
-  if (moving && (geo.speed || 0) > 40) {
+  // Example 1: Rest stop every ~2h of driving
+  if (moving && (fix.speedKph || 0) > 40) {
     const bucket = Math.floor(now / (2 * 60 * 60 * 1000)); // 2h bucket
     out.push({
       id: `rest_${bucket}`,
@@ -204,8 +177,8 @@ function generateCandidates(frame) {
     });
   }
 
-  // Example 3: Pace adjust if crawling (< 15 km/h)
-  if (moving && (geo.speed || 0) < 15) {
+  // Example 2: Pace adjust if crawling (< 15 km/h)
+  if (moving && (fix.speedKph || 0) < 15) {
     out.push({
       id: `pace_${Math.floor(now / 300000)}`, // 5m bucket
       ts: now,
@@ -218,8 +191,8 @@ function generateCandidates(frame) {
     });
   }
 
-  // Example 4: Scenic whisper if moving and no severe weather
-  if (moving && !severe) {
+  // Example 3: Scenic whisper if moving
+  if (moving) {
     out.push({
       id: `scenic_${Math.floor(now / 900000)}`, // 15m bucket
       ts: now,
