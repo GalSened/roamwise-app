@@ -46,9 +46,16 @@ export default [
         // Browser APIs
         IntersectionObserver: 'readonly',
         SpeechSynthesisUtterance: 'readonly',
+        // IndexedDB
+        indexedDB: 'readonly',
+        IDBDatabase: 'readonly',
+        IDBValidKey: 'readonly',
         // Service Worker globals
         self: 'readonly',
         importScripts: 'readonly',
+        caches: 'readonly',
+        Response: 'readonly',
+        Request: 'readonly',
         // Node.js globals
         require: 'readonly',
         module: 'readonly',
