@@ -6,6 +6,13 @@
  */
 
 /**
+ * @typedef {Object} SafetyGate
+ * @property {number} [minSpeedKph] - Suggest only above this speed
+ * @property {number} [maxSpeedKph] - Suggest only below this speed
+ * @property {boolean} [visibleOnly] - Require tab visible
+ */
+
+/**
  * @typedef {Object} Suggestion
  * @property {string} id - Stable ID for dedupe/cooldown
  * @property {number} ts - Created at (Unix timestamp ms)
@@ -13,6 +20,7 @@
  * @property {string} title - Short headline for Car Mode
  * @property {string} reason - Explainability tag
  * @property {number} [expiresAt] - Optional TTL for visibility
+ * @property {SafetyGate} [safety] - Runtime gating rules
  * @property {Object} [acceptAction] - Optional accept action
  * @property {string} acceptAction.type - Action type
  * @property {*} [acceptAction.payload] - Action payload

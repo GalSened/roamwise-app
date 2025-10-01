@@ -1,4 +1,5 @@
 import { SugBus } from './suggestion-types.js';
+import { generateCandidates } from './candidates.js';
 
 // ---- Bandit Memory Type ----
 /**
@@ -6,6 +7,7 @@ import { SugBus } from './suggestion-types.js';
  * @property {Record<string, number>} accept - Acceptance counts per kind
  * @property {Record<string, number>} reject - Rejection counts per kind
  * @property {Record<string, number>} cooldown - Suggestion id -> nextAllowedTs
+ * @property {number} [lastEmitTs] - Last emission timestamp for global rate limiting
  */
 
 // ---- Constants ----
@@ -32,6 +34,30 @@ function saveMem(mem) {
   }
 }
 
+// ---- Safety Gate Helper ----
+/**
+ * Check if suggestion passes safety gates
+ * @param {import('./suggestion-types.js').Suggestion} suggestion
+ * @param {import('./context-types.js').ContextFrame} frame
+ * @param {boolean} visible
+ * @returns {boolean}
+ */
+function gate(suggestion, frame, visible) {
+  const safety = suggestion.safety;
+  if (!safety) return true; // No gates = always pass
+
+  const speedKph = frame.fix?.speedKph ?? 0;
+
+  // Check visibility gate
+  if (safety.visibleOnly && !visible) return false;
+
+  // Check speed gates
+  if (safety.minSpeedKph != null && speedKph < safety.minSpeedKph) return false;
+  if (safety.maxSpeedKph != null && speedKph > safety.maxSpeedKph) return false;
+
+  return true;
+}
+
 // ---- Recommender Class ----
 export class Recommender {
   /**
@@ -43,6 +69,16 @@ export class Recommender {
     this.mem = loadMem();
     this.lastEmit = 0;
     this.unsubscribe = null;
+    this.visible = !document.hidden;
+
+    // Track visibility changes
+    document.addEventListener(
+      'visibilitychange',
+      () => {
+        this.visible = !document.hidden;
+      },
+      { passive: true }
+    );
   }
 
   /**
@@ -104,18 +140,32 @@ export class Recommender {
   handleFrame(frame) {
     const now = Date.now();
 
-    // Throttle: only emit suggestions every ~30s
-    if (now - this.lastEmit < EMIT_INTERVAL) {
+    // Global rate limit: only emit suggestions every ~30s
+    if ((this.mem.lastEmitTs ?? 0) + EMIT_INTERVAL > now) {
       return;
     }
 
-    // Generate candidates and rank them
-    const candidates = generateCandidates(frame);
-    const ranked = this.rank(candidates, this.mem, now);
+    // Generate candidates
+    const candidates = generateCandidates(frame, this.visible);
+
+    // Filter by cooldown
+    const ready = candidates.filter((c) => (this.mem.cooldown[c.id] || 0) <= now);
+
+    // Filter by safety gates
+    const gated = ready.filter((c) => gate(c, frame, this.visible));
+
+    // Filter by TTL (expiresAt)
+    const valid = gated.filter((c) => (c.expiresAt ?? now + 1) > now);
+
+    if (valid.length === 0) return;
+
+    // Rank and take top MAX_SUGGESTIONS
+    const ranked = this.rank(valid, this.mem);
     const suggestions = ranked.slice(0, MAX_SUGGESTIONS);
 
     if (suggestions.length > 0) {
-      this.lastEmit = now;
+      this.mem.lastEmitTs = now;
+      saveMem(this.mem);
       this.bus.emit(suggestions);
     }
   }
@@ -125,85 +175,18 @@ export class Recommender {
    * @private
    * @param {import('./suggestion-types.js').Suggestion[]} candidates
    * @param {BanditMem} mem
-   * @param {number} now
    * @returns {import('./suggestion-types.js').Suggestion[]}
    */
-  rank(candidates, mem, now) {
-    // Filter out cooled down suggestions
-    const filtered = candidates.filter((c) => (mem.cooldown[c.id] || 0) <= now);
-
-    // Score = base + (accept - reject) * 0.5 + exploration noise
-    return filtered
+  rank(candidates, mem) {
+    // Score = base + (accept - reject) * 0.6 + exploration noise
+    return candidates
       .map((c) => {
         const accept = mem.accept[c.kind] || 0;
         const reject = mem.reject[c.kind] || 0;
-        const score = 1 + (accept - reject) * 0.5 + Math.random() * 0.05;
+        const score = 1 + (accept - reject) * 0.6 + Math.random() * 0.03;
         return { score, suggestion: c };
       })
       .sort((a, b) => b.score - a.score)
       .map((x) => x.suggestion);
   }
-}
-
-// ---- Candidate Generators (Rule-Based) ----
-
-/**
- * Generate suggestion candidates based on context frame
- * @param {import('./context-types.js').ContextFrame} frame
- * @returns {import('./suggestion-types.js').Suggestion[]}
- */
-function generateCandidates(frame) {
-  const out = [];
-  const now = Date.now();
-  const fix = frame.fix;
-
-  if (!fix) return out;
-
-  // Determine if user is moving (speed > 8 km/h ~ walking speed)
-  const moving = (fix.speedKph || 0) > 8;
-
-  // Example 1: Rest stop every ~2h of driving
-  if (moving && (fix.speedKph || 0) > 40) {
-    const bucket = Math.floor(now / (2 * 60 * 60 * 1000)); // 2h bucket
-    out.push({
-      id: `rest_${bucket}`,
-      ts: now,
-      kind: 'rest',
-      title: 'Consider a short rest stop soon',
-      reason: "You've been driving for a while",
-      expiresAt: now + 20 * 60 * 1000,
-      acceptAction: { type: 'FIND_NEARBY', payload: { category: 'rest' } },
-      declineAction: { type: 'SNOOZE', payload: { minutes: 30 } },
-    });
-  }
-
-  // Example 2: Pace adjust if crawling (< 15 km/h)
-  if (moving && (fix.speedKph || 0) < 15) {
-    out.push({
-      id: `pace_${Math.floor(now / 300000)}`, // 5m bucket
-      ts: now,
-      kind: 'pace_adjust',
-      title: 'Heavy traffic — consider adjusting schedule',
-      reason: 'Low speed for several minutes',
-      expiresAt: now + 10 * 60 * 1000,
-      acceptAction: { type: 'SHIFT_SCHEDULE', payload: { minutes: 20 } },
-      declineAction: { type: 'IGNORE' },
-    });
-  }
-
-  // Example 3: Scenic whisper if moving
-  if (moving) {
-    out.push({
-      id: `scenic_${Math.floor(now / 900000)}`, // 15m bucket
-      ts: now,
-      kind: 'scenic',
-      title: 'Scenic detour nearby (check when safe)',
-      reason: 'Periodic scenic check',
-      expiresAt: now + 15 * 60 * 1000,
-      acceptAction: { type: 'SHOW_SCENIC', payload: {} },
-      declineAction: { type: 'SNOOZE', payload: { minutes: 30 } },
-    });
-  }
-
-  return out;
 }
