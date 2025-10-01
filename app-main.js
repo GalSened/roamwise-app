@@ -4,6 +4,7 @@ console.log('Simple app starting...');
 // Import API client (feature-flagged offline caching)
 import { apiRoute, apiWeather } from './src/lib/api.js';
 import { saveItinerary, loadItinerary } from './src/lib/itinerary.js';
+import { mountUpdateBanner } from './src/lib/update-banner.js';
 
 class SimpleNavigation {
   constructor() {
@@ -936,9 +937,11 @@ class SimpleNavigation {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     window.simpleApp = new SimpleNavigation();
+    mountUpdateBanner(); // Mount SW update banner
   });
 } else {
   window.simpleApp = new SimpleNavigation();
+  mountUpdateBanner(); // Mount SW update banner
 }
 
 console.log('Simple app loaded');
