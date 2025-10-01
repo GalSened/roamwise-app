@@ -2,10 +2,11 @@
 console.log('Simple app starting...');
 
 // Import API client (feature-flagged offline caching)
-import { apiRoute, apiWeather } from './src/lib/api.js';
+import { apiRoute, apiWeather, apiPlan } from './src/lib/api.js';
 import { saveItinerary, loadItinerary } from './src/lib/itinerary.js';
 import { mountUpdateBanner } from './src/lib/update-banner.js';
 import { mountDevDrawer } from './src/lib/dev-drawer.js';
+import { flags } from './src/lib/flags.js';
 
 class SimpleNavigation {
   constructor() {
@@ -255,33 +256,140 @@ class SimpleNavigation {
         generateBtn.disabled = true;
 
         try {
-          // Call Personal AI for recommendations
-          const response = await fetch(
-            'https://premium-hybrid-473405-g7.uc.r.appspot.com/api/ai/recommend',
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                preferences: {
-                  duration: selectedDuration,
-                  interests: selectedInterests,
-                  budget: parseInt(budget),
-                  destinationType: 'mixed',
-                  activities: selectedInterests,
-                },
-                context: {
-                  userId: 'personal',
-                  location: 'Current Location',
-                  requestType: 'trip_planning',
-                },
-              }),
+          // Collect location for stub call
+          let startLocation = {
+            lat: 32.0853, // Default: Tel Aviv
+            lng: 34.7818,
+            name: 'Tel Aviv',
+          };
+
+          // Try to get actual current location
+          if (navigator.geolocation) {
+            try {
+              const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 });
+              });
+              startLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                name: 'Current Location',
+              };
+            } catch (geoError) {
+              console.log('[planner] Using default location (geolocation failed)');
             }
-          );
+          }
 
-          const data = await response.json();
+          if (flags.plannerStub) {
+            // ---- NEW (flagged) path: use orchestrator stub ----
+            console.info('[planner] calling /api/plan (stub) due to plannerStub flag');
 
-          if (data.recommendations) {
+            const planInputs = {
+              preferences: {
+                interests: selectedInterests,
+                duration: selectedDuration,
+                budget: parseInt(budget),
+              },
+              startLocation,
+            };
+
+            const response = await apiPlan(planInputs);
+            const { itinerary, rationales, citations } = response;
+
+            // Map stub response to existing display format
             tripDisplay.innerHTML = `
+              <div class="trip-result ai-powered">
+                <h3>🧠 Your AI Generated Trip! (Stub Mode)</h3>
+                <div class="trip-summary">
+                  <div class="trip-stat">
+                    <span class="stat-label">Duration:</span>
+                    <span class="stat-value">${selectedDuration}</span>
+                  </div>
+                  <div class="trip-stat">
+                    <span class="stat-label">Budget:</span>
+                    <span class="stat-value">$${budget}</span>
+                  </div>
+                  <div class="trip-stat">
+                    <span class="stat-label">Mode:</span>
+                    <span class="stat-value">Stub</span>
+                  </div>
+                </div>
+                <div class="trip-content">
+                  <h4>📍 ${itinerary.title}</h4>
+                  ${
+                    itinerary.days
+                      ?.map(
+                        (day) => `
+                    <div style="margin: 15px 0;">
+                      <strong>Day ${day.date}:</strong>
+                      <ul style="margin-left: 20px;">
+                        ${day.activities
+                          ?.map(
+                            (a) => `
+                          <li>${a.time} - ${a.place} (${a.duration}min) - ${a.notes}</li>
+                        `
+                          )
+                          .join('')}
+                      </ul>
+                    </div>
+                  `
+                      )
+                      .join('') || ''
+                  }
+                  ${
+                    rationales?.length
+                      ? `
+                    <div style="margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                      <strong>💡 Rationales:</strong>
+                      <ul>${rationales.map((r) => `<li>${r}</li>`).join('')}</ul>
+                    </div>
+                  `
+                      : ''
+                  }
+                  ${
+                    citations?.length
+                      ? `
+                    <div style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">
+                      <strong>📚 Sources:</strong> ${citations.length} provider citations
+                    </div>
+                  `
+                      : ''
+                  }
+                </div>
+                <p style="margin-top: 15px; padding: 10px; background: rgba(59, 130, 246, 0.2); border-radius: 8px;">
+                  <strong>🧪 Stub Mode Active</strong> - Using mock data from /api/plan endpoint.
+                  Disable <code>plannerStub</code> flag to use production AI.
+                </p>
+              </div>
+            `;
+          } else {
+            // ---- LEGACY path: keep your current v1 logic exactly as-is ----
+            // Call Personal AI for recommendations
+            const response = await fetch(
+              'https://premium-hybrid-473405-g7.uc.r.appspot.com/api/ai/recommend',
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  preferences: {
+                    duration: selectedDuration,
+                    interests: selectedInterests,
+                    budget: parseInt(budget),
+                    destinationType: 'mixed',
+                    activities: selectedInterests,
+                  },
+                  context: {
+                    userId: 'personal',
+                    location: 'Current Location',
+                    requestType: 'trip_planning',
+                  },
+                }),
+              }
+            );
+
+            const data = await response.json();
+
+            if (data.recommendations) {
+              tripDisplay.innerHTML = `
               <div class="trip-result ai-powered">
                 <h3>🧠 Your o3-mini AI Generated Trip!</h3>
                 <div class="trip-summary">
@@ -311,8 +419,9 @@ class SimpleNavigation {
                 <p><strong>🤖 Powered by o3-mini reasoning</strong> - Your Personal AI is analyzing your preferences and creating the perfect trip just for you!</p>
               </div>
             `;
-          } else {
-            throw new Error('No recommendations received');
+            } else {
+              throw new Error('No recommendations received');
+            }
           }
         } catch (error) {
           console.error('AI Trip generation error:', error);
