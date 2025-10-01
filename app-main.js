@@ -256,7 +256,6 @@ class SimpleNavigation {
           });
           
           const data = await response.json();
-          const tripDisplay = document.getElementById('enhancedTripDisplay');
           
           if (data.recommendations) {
             tripDisplay.innerHTML = `
@@ -295,7 +294,6 @@ class SimpleNavigation {
           
         } catch (error) {
           console.error('AI Trip generation error:', error);
-          const tripDisplay = document.getElementById('enhancedTripDisplay');
           tripDisplay.innerHTML = `
             <div class="trip-result ai-learning">
               <h3>🧠 AI Learning Your Preferences</h3>
