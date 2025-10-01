@@ -3,7 +3,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier -w .",
-    "typecheck": "tsc -p tsconfig.base.json"
+    "typecheck": "tsc -p tsconfig.base.json",
+    "preview": "vite preview --strictPort --port 5173",
+    "e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
@@ -15,6 +17,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-unused-imports": "^4.2.0",
+    "http-server": "^14.1.1",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3"
   }
