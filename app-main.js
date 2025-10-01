@@ -2,7 +2,7 @@
 console.log('Simple app starting...');
 
 // Import API client (feature-flagged offline caching)
-import { apiRoute } from './src/lib/api.js';
+import { apiRoute, apiWeather } from './src/lib/api.js';
 
 class SimpleNavigation {
   constructor() {
@@ -16,6 +16,7 @@ class SimpleNavigation {
     this.setupThemeToggle();
     this.setupFormInteractions(); // Add this to ensure search works
     this.setupRouting(); // Wire routing API client
+    this.setupWeather(); // Wire weather API client
     this.setupMap(); // Initialize map
     this.showView('search');
   }
@@ -670,6 +671,66 @@ class SimpleNavigation {
             break;
         }
       });
+    });
+  }
+
+  setupWeather() {
+    const weatherBtn = document.querySelector('.action-btn[data-action="weather"]');
+
+    if (!weatherBtn) {
+      console.log('Weather button not found, skipping weather setup');
+      return;
+    }
+
+    weatherBtn.addEventListener('click', async () => {
+      console.log('Weather button clicked');
+
+      // Get current location
+      if (!navigator.geolocation) {
+        alert('⚠️ Geolocation is not supported by your browser');
+        return;
+      }
+
+      weatherBtn.textContent = '🔄 Getting Weather...';
+      weatherBtn.disabled = true;
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const ts = Math.floor(Date.now() / 1000); // current timestamp
+
+          console.log(`Getting weather for lat=${lat}, lon=${lon}, ts=${ts}`);
+
+          try {
+            // Use apiWeather() which is feature-flagged for offline caching
+            const weatherData = await apiWeather({ lat, lon, ts });
+
+            console.log('Weather data:', weatherData);
+
+            // Display weather results (simple alert for now - can be enhanced with UI)
+            const temp = weatherData.temp || 'N/A';
+            const desc = weatherData.description || 'No description';
+            const humidity = weatherData.humidity || 'N/A';
+
+            alert(`⛅ Current Weather\n\n🌡️ Temperature: ${temp}°C\n☁️ ${desc}\n💧 Humidity: ${humidity}%`);
+
+            weatherBtn.textContent = '⛅ Weather';
+            weatherBtn.disabled = false;
+          } catch (error) {
+            console.error('Weather error:', error);
+            alert('❌ Weather Not Available\n\nCould not fetch weather at this time. This feature requires a backend weather API.');
+            weatherBtn.textContent = '⛅ Weather';
+            weatherBtn.disabled = false;
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          alert('❌ Location Error\n\nCould not get your location. Please enable location services.');
+          weatherBtn.textContent = '⛅ Weather';
+          weatherBtn.disabled = false;
+        }
+      );
     });
   }
 
