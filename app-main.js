@@ -5,6 +5,7 @@ console.log('Simple app starting...');
 import { apiRoute, apiWeather } from './src/lib/api.js';
 import { saveItinerary, loadItinerary } from './src/lib/itinerary.js';
 import { mountUpdateBanner } from './src/lib/update-banner.js';
+import { mountDevDrawer } from './src/lib/dev-drawer.js';
 
 class SimpleNavigation {
   constructor() {
@@ -938,10 +939,12 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     window.simpleApp = new SimpleNavigation();
     mountUpdateBanner(); // Mount SW update banner
+    mountDevDrawer(); // Mount hidden dev drawer
   });
 } else {
   window.simpleApp = new SimpleNavigation();
   mountUpdateBanner(); // Mount SW update banner
+  mountDevDrawer(); // Mount hidden dev drawer
 }
 
 console.log('Simple app loaded');
