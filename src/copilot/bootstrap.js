@@ -1,6 +1,7 @@
 import { flags } from '../lib/flags.js';
 import { ContextEngine } from './context-engine.js';
 import { Recommender } from './recommender.js';
+import { sugStream } from './sug-stream.js';
 
 // Singleton instances
 let engine = null;
@@ -36,9 +37,14 @@ export async function startCopilotContext() {
     recommender = new Recommender(engine);
     recommender.start();
 
-    // Subscribe to suggestions for console logging
+    // Subscribe to suggestions
     recommender.on((suggestions) => {
       console.info('[copilot] suggestions ->', suggestions);
+
+      // If copilotUi flag is on, pipe to UI stream
+      if (flags.copilotUi) {
+        sugStream.push(suggestions);
+      }
     });
 
     // Expose API for manual testing (dev only)

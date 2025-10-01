@@ -7,7 +7,9 @@ import { saveItinerary, loadItinerary } from './src/lib/itinerary.js';
 import { mountUpdateBanner } from './src/lib/update-banner.js';
 import { mountDevDrawer } from './src/lib/dev-drawer.js';
 import { flags } from './src/lib/flags.js';
-import { startCopilotContext } from './src/copilot/bootstrap.js';
+import { startCopilotContext, getCopilotEngine } from './src/copilot/bootstrap.js';
+import { CarModeOverlay } from './src/copilot/car-mode-overlay.js';
+import { sugStream } from './src/copilot/sug-stream.js';
 
 class SimpleNavigation {
   constructor() {
@@ -25,6 +27,7 @@ class SimpleNavigation {
     this.setupItinerary(); // Wire itinerary save/load
     this.setupMap(); // Initialize map
     startCopilotContext(); // Wire context engine (flag-gated)
+    this.setupCarModeOverlay(); // Wire Car-Mode overlay (flag-gated)
     this.showView('search');
   }
 
@@ -1041,6 +1044,47 @@ class SimpleNavigation {
       }
     } catch (error) {
       console.error('Map initialization error:', error);
+    }
+  }
+
+  setupCarModeOverlay() {
+    // Only mount if BOTH copilot AND copilotUi flags are enabled
+    if (!flags.copilot || !flags.copilotUi) {
+      console.log('[CarMode] Flags OFF, overlay disabled');
+      return;
+    }
+
+    console.info('[CarMode] Mounting overlay...');
+
+    try {
+      // Get recommender API from window.__copilot (exposed by bootstrap)
+      const copilotApi = window.__copilot;
+      if (!copilotApi) {
+        console.warn('[CarMode] Copilot API not available yet, skipping overlay setup');
+        return;
+      }
+
+      // Create overlay instance
+      this.carModeOverlay = new CarModeOverlay({
+        onAccept: (id, kind) => copilotApi.accept(id, kind),
+        onDecline: (id, kind) => copilotApi.decline(id, kind),
+      });
+
+      // Mount overlay to DOM
+      this.carModeOverlay.mount();
+
+      // Subscribe to suggestion stream
+      sugStream.subscribe((suggestion) => {
+        if (suggestion === null) {
+          this.carModeOverlay.hide();
+        } else {
+          this.carModeOverlay.show(suggestion);
+        }
+      });
+
+      console.info('[CarMode] Overlay setup complete');
+    } catch (error) {
+      console.error('[CarMode] Failed to setup overlay:', error);
     }
   }
 }

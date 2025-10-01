@@ -20,4 +20,18 @@ export const flags = {
       return false;
     }
   },
+  get copilotUi() {
+    try {
+      return localStorage.getItem('copilotUi') === '1';
+    } catch {
+      return false;
+    }
+  },
+  get tts() {
+    try {
+      return localStorage.getItem('tts') === '1';
+    } catch {
+      return false;
+    }
+  },
 };
