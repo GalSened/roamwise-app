@@ -6,4 +6,11 @@ export const flags = {
       return false;
     }
   },
+  get plannerStub() {
+    try {
+      return localStorage.getItem('plannerStub') === '1';
+    } catch {
+      return false;
+    }
+  },
 };

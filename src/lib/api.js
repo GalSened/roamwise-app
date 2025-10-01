@@ -104,3 +104,28 @@ export async function apiGetItinerary(id) {
     ITIN_TTL
   );
 }
+
+const PLAN_TTL = 1000 * 60 * 60 * 1; // 1h
+
+export async function apiPlan(body) {
+  // Only works when plannerStub flag is ON
+  if (!flags.plannerStub) {
+    throw new Error('Planner stub not enabled');
+  }
+
+  const key = stableKeyFrom({ endpoint: '/api/plan', body });
+  return withCache(
+    'plan',
+    key,
+    async () => {
+      const resp = await fetch('/api/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) throw new Error(`plan ${resp.status}`);
+      return resp.json();
+    },
+    PLAN_TTL
+  );
+}
