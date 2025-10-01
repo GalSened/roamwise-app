@@ -1,0 +1,45 @@
+id,title,description,phase,status,priority,labels,assignee,estimate_hours
+1,Fix duplicate const tripDisplay declaration,"Remove duplicate variable declaration at line 297 causing navigation failure",Phase 1,completed,P0,"bug,frontend",,1
+2,Add missing try block before fetch call,"Add try { statement before line 238 to complete try-catch block",Phase 1,completed,P0,"bug,frontend",,0.5
+3,Deploy navigation fixes to GitHub Pages,"Push fixes to gh-pages branch and verify deployment",Phase 1,completed,P0,"deployment,frontend",,0.5
+4,Verify all navigation tabs functional,"Test all 5 tabs (Search, AI, Trip, Map, Profile) working correctly",Phase 1,completed,P1,"testing,frontend",,1
+5,Update OpenAI API key in Secret Manager,"Add new OpenAI key as version 3 in GCP Secret Manager",Phase 2,completed,P0,"backend,security",,0.5
+6,Fix GCP service account Secret Manager permissions,"Grant secretAccessor role to appspot service account for all 3 secrets",Phase 2,in_progress,P0,"backend,security",,2
+7,Redeploy backend with correct permissions,"Deploy backend to App Engine after permission fixes",Phase 2,pending,P0,"backend,deployment",,1
+8,Test end-to-end AI trip generation,"Verify POST /api/ai/recommend returns 200 OK with valid response",Phase 2,pending,P0,"backend,testing",,1
+9,Verify search API working,"Test POST /api/intelligence/search endpoint functionality",Phase 2,pending,P1,"backend,testing",,0.5
+10,Run full Playwright test suite,"Execute all 42 automated tests and generate report",Phase 3,pending,P1,"testing,qa",,2
+11,iPhone user acceptance testing,"Manual testing on iPhone Safari for all features",Phase 3,pending,P1,"testing,mobile",,3
+12,Performance benchmarking,"Measure Core Web Vitals (LCP, FID, CLS) and generate report",Phase 3,pending,P2,"performance,testing",,2
+13,Accessibility audit WCAG AA,"Run accessibility tests and fix issues to meet WCAG AA compliance",Phase 3,pending,P2,"accessibility,testing",,4
+14,Cross-browser compatibility testing,"Test on Chrome, Safari, Firefox, Edge on desktop and mobile",Phase 3,pending,P2,"testing,compatibility",,2
+15,Update FINAL-APP-ANALYSIS.md,"Refresh test results and status after all fixes",Phase 3,pending,P2,"documentation",,1
+16,Create API documentation,"Write OpenAPI/Swagger spec for backend endpoints",Phase 4,pending,P2,"documentation,backend",,4
+17,Write developer setup guide,"Create README with local setup instructions",Phase 4,pending,P1,"documentation",,2
+18,Create user guide for voice commands,"Document all supported voice commands and usage",Phase 4,pending,P2,"documentation",,1
+19,Write Secret Manager configuration docs,"Document how to set up and manage API keys in GCP",Phase 4,pending,P2,"documentation,backend",,2
+20,Create troubleshooting guide,"Common issues and solutions for developers and users",Phase 4,pending,P2,"documentation",,2
+21,Generate architecture diagram,"Visual diagram of frontend/backend architecture",Phase 4,pending,P2,"documentation",,1
+22,Write docs/ARCHITECTURE.md,"Detailed architecture documentation mirroring /plan section",Phase 4,pending,P1,"documentation",,3
+23,Create docs/RUNBOOK.md,"Operations guide for running dev/build/test/deploy",Phase 4,pending,P1,"documentation",,2
+24,Add CI workflow skeleton,"Create .github/workflows/ci.yml with build and lint steps",Phase 4,pending,P1,"ci,infrastructure",,2
+25,Implement offline-first service worker,"Update sw.js for offline capability with cache-first strategy",Phase 5,pending,P2,"frontend,performance",,8
+26,Add API response caching,"Cache API responses in localStorage/IndexedDB",Phase 5,pending,P2,"frontend,performance",,4
+27,Implement code splitting,"Split app-main.js into smaller chunks for faster loading",Phase 5,pending,P3,"frontend,performance",,6
+28,Optimize images and use CDN,"Compress images and serve from CDN",Phase 5,pending,P3,"frontend,performance",,3
+29,Bundle size analysis and tree-shaking,"Analyze bundle and remove unused code",Phase 5,pending,P3,"frontend,performance",,4
+30,Save trip history to localStorage,"Implement trip history storage and retrieval",Phase 6,pending,P2,"frontend,feature",,8
+31,Backend trip history API,"Create endpoints to save/retrieve trip history",Phase 6,pending,P2,"backend,feature",,6
+32,Export trips to calendar iCal,"Generate iCal files for trips",Phase 6,pending,P3,"frontend,feature",,4
+33,Trip favorites/bookmarks system,"Allow users to favorite trips",Phase 6,pending,P3,"frontend,feature",,4
+34,Share trips via link,"Generate shareable links for trips",Phase 6,pending,P3,"frontend,feature",,6
+35,User authentication Google Sign-In,"Implement Google OAuth for user accounts",Phase 6,pending,P3,"frontend,backend,feature",,16
+36,Multi-language i18n support,"Add internationalization framework and translations",Phase 6,pending,P3,"frontend,feature",,20
+37,Dark mode toggle,"Implement dark mode with CSS variables",Phase 6,pending,P3,"frontend,feature",,8
+38,Push notifications for trip reminders,"Service worker push notifications",Phase 6,pending,P3,"frontend,feature",,12
+39,Collaborative trip planning,"Multi-user real-time trip editing",Phase 6,pending,P3,"frontend,backend,feature",,40
+40,Fix npm package-lock.json sync issue,"Resolve backend deployment package-lock conflicts",Tech Debt,pending,P1,"backend,infrastructure",,2
+41,Add global error boundary,"Implement frontend error handler and reporting",Tech Debt,pending,P2,"frontend,reliability",,4
+42,Standardize async/await patterns,"Refactor mixed promise/async code for consistency",Tech Debt,pending,P3,"frontend,backend,quality",,8
+43,Migrate to TypeScript,"Add TypeScript for type safety",Tech Debt,pending,P3,"frontend,backend,quality",,80
+44,Add E2E tests to CI pipeline,"Integrate Playwright tests into GitHub Actions",Tech Debt,pending,P2,"ci,testing",,4
