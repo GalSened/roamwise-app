@@ -1173,6 +1173,34 @@
               <div id="routeResults" style="margin-top: var(--space-md);"></div>
             </div>
 
+            <!-- Itinerary Save/Load (Feature-Flagged) -->
+            <div class="form-group">
+              <label>💾 Save/Load Itinerary (Optional)</label>
+              <input
+                type="text"
+                id="itineraryTitle"
+                placeholder="Trip title (e.g., Weekend in Tel Aviv)"
+                class="search-input"
+                style="margin-bottom: var(--space-sm);"
+              />
+              <button id="saveItineraryBtn" class="search-btn" style="width: 100%; margin-bottom: var(--space-sm);">
+                💾 Save Itinerary
+              </button>
+              <div style="display: flex; gap: var(--space-sm);">
+                <input
+                  type="text"
+                  id="itineraryId"
+                  placeholder="Itinerary ID to load"
+                  class="search-input"
+                  style="flex: 1;"
+                />
+                <button id="loadItineraryBtn" class="search-btn" style="flex: 0 0 auto;">
+                  📂 Load
+                </button>
+              </div>
+              <div id="itineraryResults" style="margin-top: var(--space-md);"></div>
+            </div>
+
             <button id="generateTripBtn" class="generate-btn">🤖 Generate Smart Trip</button>
           </div>
 

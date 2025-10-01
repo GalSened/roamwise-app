@@ -3,6 +3,7 @@ console.log('Simple app starting...');
 
 // Import API client (feature-flagged offline caching)
 import { apiRoute, apiWeather } from './src/lib/api.js';
+import { saveItinerary, loadItinerary } from './src/lib/itinerary.js';
 
 class SimpleNavigation {
   constructor() {
@@ -17,6 +18,7 @@ class SimpleNavigation {
     this.setupFormInteractions(); // Add this to ensure search works
     this.setupRouting(); // Wire routing API client
     this.setupWeather(); // Wire weather API client
+    this.setupItinerary(); // Wire itinerary save/load
     this.setupMap(); // Initialize map
     this.showView('search');
   }
@@ -731,6 +733,134 @@ class SimpleNavigation {
           weatherBtn.disabled = false;
         }
       );
+    });
+  }
+
+  setupItinerary() {
+    const saveBtn = document.getElementById('saveItineraryBtn');
+    const loadBtn = document.getElementById('loadItineraryBtn');
+    const titleInput = document.getElementById('itineraryTitle');
+    const idInput = document.getElementById('itineraryId');
+    const resultsDiv = document.getElementById('itineraryResults');
+
+    if (!saveBtn || !loadBtn || !titleInput || !idInput || !resultsDiv) {
+      console.log('Itinerary UI elements not found, skipping itinerary setup');
+      return;
+    }
+
+    // Handle Save
+    saveBtn.addEventListener('click', async () => {
+      const title = titleInput.value.trim();
+      if (!title) {
+        resultsDiv.innerHTML = `
+          <div class="result-card" style="background: var(--warning-bg, #fff3cd); border-left: 4px solid var(--warning, #ffc107);">
+            <p>⚠️ Please enter a trip title</p>
+          </div>
+        `;
+        return;
+      }
+
+      console.log('Saving itinerary:', title);
+      saveBtn.textContent = '🔄 Saving...';
+      saveBtn.disabled = true;
+
+      try {
+        // Create sample itinerary data
+        const itinerary = {
+          id: `itin-${Date.now()}`,
+          title: title,
+          days: [],
+          preferences: {
+            duration: document.querySelector('.duration-btn.selected')?.dataset.duration || '8',
+            interests: Array.from(document.querySelectorAll('.interest-btn.selected')).map(
+              (btn) => btn.dataset.interest
+            ),
+            budget: document.getElementById('budgetRange')?.value || '300',
+          },
+          createdAt: new Date().toISOString(),
+        };
+
+        // Use saveItinerary() which is feature-flagged
+        const saved = await saveItinerary(itinerary);
+
+        console.log('Itinerary saved:', saved);
+
+        resultsDiv.innerHTML = `
+          <div class="result-card" style="background: var(--bg-glass); border-left: 4px solid var(--primary);">
+            <h4>✅ Itinerary Saved!</h4>
+            <p><strong>Title:</strong> ${saved.title}</p>
+            <p><strong>ID:</strong> <code>${saved.id}</code></p>
+            <p style="font-size: 0.9em; opacity: 0.7;">Copy the ID above to load this itinerary later</p>
+            ${saved.offline ? '<p style="font-size: 0.9em; opacity: 0.7;">📦 Saved to offline cache</p>' : ''}
+          </div>
+        `;
+
+        // Clear title, set ID for easy load test
+        titleInput.value = '';
+        idInput.value = saved.id;
+      } catch (error) {
+        console.error('Save error:', error);
+        resultsDiv.innerHTML = `
+          <div class="result-card" style="background: #ffebee; border-left: 4px solid #f44336;">
+            <h4>❌ Save Failed</h4>
+            <p>Could not save itinerary. The backend <code>/api/itinerary</code> endpoint is required.</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">💡 With offline flag ON, a draft was saved locally.</p>
+          </div>
+        `;
+      }
+
+      saveBtn.textContent = '💾 Save Itinerary';
+      saveBtn.disabled = false;
+    });
+
+    // Handle Load
+    loadBtn.addEventListener('click', async () => {
+      const id = idInput.value.trim();
+      if (!id) {
+        resultsDiv.innerHTML = `
+          <div class="result-card" style="background: var(--warning-bg, #fff3cd); border-left: 4px solid var(--warning, #ffc107);">
+            <p>⚠️ Please enter an itinerary ID</p>
+          </div>
+        `;
+        return;
+      }
+
+      console.log('Loading itinerary:', id);
+      loadBtn.textContent = '🔄';
+      loadBtn.disabled = true;
+
+      try {
+        // Use loadItinerary() which is feature-flagged
+        const itin = await loadItinerary(id);
+
+        console.log('Itinerary loaded:', itin);
+
+        resultsDiv.innerHTML = `
+          <div class="result-card" style="background: var(--bg-glass); border-left: 4px solid var(--primary);">
+            <h4>📂 Itinerary Loaded!</h4>
+            <p><strong>Title:</strong> ${itin.title}</p>
+            <p><strong>ID:</strong> ${itin.id}</p>
+            <p><strong>Created:</strong> ${new Date(itin.createdAt).toLocaleString()}</p>
+            ${itin.preferences ? `<p><strong>Duration:</strong> ${itin.preferences.duration}h</p>` : ''}
+            ${itin.fromDraft ? '<p style="font-size: 0.9em; opacity: 0.7;">📦 Loaded from offline draft</p>' : ''}
+          </div>
+        `;
+
+        // Populate the form with loaded data
+        if (itin.title) titleInput.value = itin.title;
+      } catch (error) {
+        console.error('Load error:', error);
+        resultsDiv.innerHTML = `
+          <div class="result-card" style="background: #ffebee; border-left: 4px solid #f44336;">
+            <h4>❌ Load Failed</h4>
+            <p>Could not load itinerary with ID: <code>${id}</code></p>
+            <p style="font-size: 0.9em; margin-top: 10px;">💡 The backend API or offline cache doesn't have this itinerary.</p>
+          </div>
+        `;
+      }
+
+      loadBtn.textContent = '📂 Load';
+      loadBtn.disabled = false;
     });
   }
 
