@@ -41,4 +41,11 @@ export const flags = {
       return false;
     }
   },
+  get copilotNav() {
+    try {
+      return localStorage.getItem('copilotNav') === '1';
+    } catch {
+      return false;
+    }
+  },
 };

@@ -41,6 +41,13 @@ export async function startCopilotContext() {
     // Subscribe to context frames (for action dispatcher GPS access)
     engine.on((frame) => {
       contextStream.push(frame);
+
+      // Emit GPS fix to window for navigate handler (Step 21-Pro)
+      if (frame.fix) {
+        if (typeof window.__copilot_setFix === 'function') {
+          window.__copilot_setFix(frame.fix.lat, frame.fix.lon);
+        }
+      }
     });
 
     // Subscribe to suggestions

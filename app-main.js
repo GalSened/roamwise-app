@@ -12,6 +12,8 @@ import { CarModeOverlay } from './src/copilot/car-mode-overlay.js';
 import { sugStream } from './src/copilot/sug-stream.js';
 import { ResultsDrawer } from './src/copilot/results-drawer.js';
 import { onNavigate } from './src/copilot/nav-bus.js';
+import { registerMap, focus, drawRoute, clearRoute } from './src/map/map-adapter.js';
+import { computeTempRoute } from './src/routes/route-exec.js';
 
 class SimpleNavigation {
   constructor() {
@@ -998,6 +1000,9 @@ class SimpleNavigation {
       // Initialize Leaflet map
       this.map = L.map('map', { zoomControl: true }).setView([32.0853, 34.7818], 13); // Tel Aviv coordinates
 
+      // Register map with adapter (Step 21-Pro)
+      registerMap(this.map);
+
       // Add OpenStreetMap tiles
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -1117,25 +1122,60 @@ class SimpleNavigation {
   setupNavigateHandler() {
     console.info('[Navigate] Setting up navigate handler...');
 
+    // Store last GPS fix from context engine
+    let lastFix = null;
+
+    // Hook: context engine will call this when GPS fix updates
+    window.__copilot_setFix = (lat, lon) => {
+      lastFix = { lat, lon };
+      console.debug('[Navigate] GPS fix updated:', lastFix);
+    };
+
     try {
       // Subscribe to navigate events
-      onNavigate(({ lat, lon, name, source }) => {
+      onNavigate(async ({ lat, lon, name, source }) => {
         console.info('[Navigate] Navigate requested:', { lat, lon, name, source });
 
-        // TODO (Step 21-Pro): Wire to real map/route
-        // For now, just console log
+        // Flag gate: only proceed if all copilot flags + copilotNav are enabled
+        if (!flags.copilot || !flags.copilotUi || !flags.copilotExec || !flags.copilotNav) {
+          console.debug('[Navigate] Flags not fully enabled, skipping navigation features');
+          return;
+        }
 
-        // Optional: If map exists, center it on the location
-        if (this.map && typeof lat === 'number' && typeof lon === 'number') {
-          console.info('[Navigate] Centering map on:', lat, lon);
-          this.map.setView([lat, lon], 15);
+        // Always focus the map on destination
+        focus(lat, lon, 15);
 
-          // Optional: Add a marker
-          if (window.L && window.L.marker) {
-            const marker = window.L.marker([lat, lon]).addTo(this.map);
-            if (name) {
-              marker.bindPopup(name).openPopup();
+        // Try to draw route if we have origin fix
+        try {
+          if (lastFix && lastFix.lat && lastFix.lon) {
+            console.info('[Navigate] Computing route from', lastFix, 'to', { lat, lon });
+
+            // Compute route coordinates
+            const routeCoords = await computeTempRoute(lastFix, { lat, lon });
+
+            // Draw route if we got valid coordinates
+            if (routeCoords && routeCoords.length > 0) {
+              drawRoute(routeCoords);
+              console.info('[Navigate] Route drawn with', routeCoords.length, 'points');
+            } else {
+              console.warn('[Navigate] No route coordinates returned');
+              clearRoute();
             }
+          } else {
+            console.debug('[Navigate] No GPS fix available, skipping route');
+            clearRoute();
+          }
+        } catch (error) {
+          // Fail safe: route computation failed, but map focus still works
+          console.warn('[Navigate] Route computation failed:', error.message);
+          clearRoute();
+        }
+
+        // Add a marker at destination
+        if (this.map && window.L && window.L.marker) {
+          const marker = window.L.marker([lat, lon]).addTo(this.map);
+          if (name) {
+            marker.bindPopup(name).openPopup();
           }
         }
       });
