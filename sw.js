@@ -1,76 +1,121 @@
-if (!self.define) {
-  let e,
-    s = {};
-  const n = (n, i) => (
-    (n = new URL(n + '.js', i).href),
-    s[n] ||
-      new Promise((s) => {
-        if ('document' in self) {
-          const e = document.createElement('script');
-          ((e.src = n), (e.onload = s), document.head.appendChild(e));
-        } else ((e = n), importScripts(n), s());
-      }).then(() => {
-        let e = s[n];
-        if (!e) throw new Error(`Module ${n} didn’t register its module`);
-        return e;
+// Traveling App SW — offline-first foundations
+const VERSION = 'v1';
+const STATIC_CACHE = `static-${VERSION}`;
+const RUNTIME_CACHE = `runtime-${VERSION}`;
+const TILE_CACHE = `tiles-${VERSION}`;
+
+// Heuristics: tweak to your domains/routes
+const isTile = (url) =>
+  /tile|tiles|osm|maptiler|openstreetmap/i.test(url.host) ||
+  /\/tiles\//.test(url.pathname);
+
+const isAPI = (url) =>
+  /\/api\/(route|weather|itinerary|search)/.test(url.pathname);
+
+// Install: precache minimal shell if you have it; keep empty for now
+self.addEventListener('install', (event) => {
+  self.skipWaiting(); // we'll control activation via message too
+  event.waitUntil(caches.open(STATIC_CACHE));
+});
+
+// Activate: cleanup old caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      const names = await caches.keys();
+      await Promise.all(
+        names
+          .filter((n) => ![STATIC_CACHE, RUNTIME_CACHE, TILE_CACHE].includes(n))
+          .map((n) => caches.delete(n))
+      );
+      await self.clients.claim();
+    })()
+  );
+});
+
+// Core strategies:
+// 1) Static assets (JS/CSS/fonts): Cache-First
+// 2) Map tiles: Stale-While-Revalidate
+// 3) API JSON (route/weather/itinerary): Cache-Then-Network (race) fallback to cache
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  const url = new URL(req.url);
+
+  // Only GET is cacheable
+  if (req.method !== 'GET') return;
+
+  // Static assets
+  if (
+    url.origin === location.origin &&
+    /\.(?:js|css|woff2?|ttf|png|jpg|svg)$/.test(url.pathname)
+  ) {
+    event.respondWith(cacheFirst(req, STATIC_CACHE));
+    return;
+  }
+
+  // Tiles (external or /tiles/)
+  if (isTile(url)) {
+    event.respondWith(
+      staleWhileRevalidate(req, TILE_CACHE, { maxAgeSeconds: 60 * 60 * 24 * 7 })
+    );
+    return;
+  }
+
+  // API JSON
+  if (isAPI(url)) {
+    event.respondWith(cacheThenNetwork(req, RUNTIME_CACHE));
+    return;
+  }
+});
+
+// Message channel for skipWaiting from the page
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+// ---- helpers ----
+async function cacheFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  const resp = await fetch(request);
+  cache.put(request, resp.clone()).catch(() => {});
+  return resp;
+}
+
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  const networkPromise = fetch(request)
+    .then((resp) => {
+      cache.put(request, resp.clone()).catch(() => {});
+      return resp;
+    })
+    .catch(() => cached || Response.error());
+  return cached ? Promise.resolve(cached) : networkPromise;
+}
+
+async function cacheThenNetwork(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cachePromise = cache.match(request);
+  const networkPromise = fetch(request)
+    .then((resp) => {
+      cache.put(request, resp.clone()).catch(() => {});
+      return resp;
+    })
+    .catch(() => null);
+
+  // Race: prefer fast network; fallback to cache if offline
+  return Promise.race([
+    networkPromise.then((r) => r || cachePromise),
+    new Promise((res) => setTimeout(async () => res(await cachePromise), 1200)),
+  ]).then(
+    (r) =>
+      r ||
+      new Response(JSON.stringify({ offline: true }), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200,
       })
   );
-  self.define = (i, l) => {
-    const r = e || ('document' in self ? document.currentScript.src : '') || location.href;
-    if (s[r]) return;
-    let t = {};
-    const o = (e) => n(e, r),
-      a = { module: { uri: r }, exports: t, require: o };
-    s[r] = Promise.all(i.map((e) => a[e] || o(e))).then((e) => (l(...e), t));
-  };
 }
-define(['./workbox-ec633383'], function (e) {
-  'use strict';
-  (self.skipWaiting(),
-    e.clientsClaim(),
-    e.precacheAndRoute(
-      [
-        { url: 'api.js', revision: '3613223f114349288c83aba04df45b48' },
-        { url: 'assets/app-BW-Xwsqc.js', revision: null },
-        { url: 'assets/app-legacy-Co19X7KT.js', revision: null },
-        { url: 'assets/icon-192-CLv5rkj_.png', revision: null },
-        { url: 'assets/index-BGE77Ti_.js', revision: null },
-        { url: 'assets/index-DZ3FuSnl.css', revision: null },
-        { url: 'assets/index-legacy-D64MnHcr.js', revision: null },
-        { url: 'assets/maps-COZuNwZo.js', revision: null },
-        { url: 'assets/maps-legacy-DLWhc_uQ.js', revision: null },
-        { url: 'assets/polyfills-legacy-DEfmcKBM.js', revision: null },
-        { url: 'assets/vendor-CyG76CEV.js', revision: null },
-        { url: 'assets/vendor-legacy-IYe0Xg8N.js', revision: null },
-        { url: 'assets/weather-Ck8jVTs4.js', revision: null },
-        { url: 'assets/weather-legacy-BrAF-H-8.js', revision: null },
-        { url: 'index.html', revision: 'v17fixbuttons' },
-        { url: 'registerSW.js', revision: '352138e9c3b6d26e6cce763697ae3dce' },
-        { url: 'simple-app.js', revision: '260edf607124dab152d94175cd238b2f' },
-        { url: 'manifest.webmanifest', revision: 'e884ff21e95b6068f36f90e2350c753f' },
-      ],
-      {}
-    ),
-    e.cleanupOutdatedCaches(),
-    e.registerRoute(new e.NavigationRoute(e.createHandlerBoundToURL('index.html'))),
-    e.registerRoute(
-      /^https:\/\/api\.openweathermap\.org\//,
-      new e.NetworkFirst({
-        cacheName: 'weather-cache',
-        plugins: [
-          new e.CacheableResponsePlugin({ statuses: [0, 200] }),
-          new e.ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 600 }),
-        ],
-      }),
-      'GET'
-    ),
-    e.registerRoute(
-      /^https:\/\/maps\.googleapis\.com\//,
-      new e.CacheFirst({
-        cacheName: 'google-maps-cache',
-        plugins: [new e.CacheableResponsePlugin({ statuses: [0, 200] })],
-      }),
-      'GET'
-    ));
-});
-//# sourceMappingURL=sw.js.map
