@@ -87,8 +87,8 @@ gcloud app deploy --quiet
 
 **Secrets:**
 - `OPENAI_API_KEY` - Version 3 (latest), v1-v2 disabled
-- `GOOGLE_MAPS_API_KEY` - [REDACTED_GMAPS_KEY]
-- `OPENWEATHER_API_KEY` - [REDACTED_OPENWEATHER_KEY]
+- `GOOGLE_MAPS_API_KEY` - [Stored in Secret Manager - rotated for security]
+- `OPENWEATHER_API_KEY` - [Stored in Secret Manager]
 
 **View Secrets:**
 ```bash
