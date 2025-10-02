@@ -130,8 +130,8 @@ if ! grep -q 'navigator.geolocation' app-main.js; then
   exit 1
 fi
 
-if ! grep -q 'roamwise-backend-v2.*planner/plan-day' app-main.js; then
-  echo "❌ FAIL: /planner/plan-day endpoint not called"
+if ! grep -q 'roamwise-proxy.*planner/plan-day' app-main.js; then
+  echo "❌ FAIL: /planner/plan-day endpoint not called via proxy"
   exit 1
 fi
 
