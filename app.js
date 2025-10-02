@@ -1,11 +1,5 @@
 // traveling — app.js (with Weather card & compare)
-
-// Define PROXY first
-const PROXY = "https://roamwise-proxy-971999716773.us-central1.run.app"; // Production proxy endpoint
-
-// Boot guards and error handling
-if (typeof L === 'undefined') throw new Error('Leaflet library not loaded (check script order/SRI/CDN).');
-if (!document.getElementById('map')) throw new Error('Missing #map container in DOM.');
+const PROXY = "https://roamwise-proxy-971999716773.us-central1.run.app"; // e.g. https://roamwise-proxy-xxxxx.a.run.app
 
 // Leaflet map
 let map = L.map('map', { zoomControl:true }).setView([45.8144, 10.8400], 12);
@@ -89,31 +83,31 @@ if (navigator.geolocation) {
     try { await updateWeatherCard(lat,lng); } catch {}
   }, ()=>{}, {enableHighAccuracy:true, timeout:8000});
 }
-ui.wxRefresh?.addEventListener('click', async ()=>{
+ui.wxRefresh.addEventListener('click', async ()=>{
   const c = map.getCenter();
   ui.wxDesc.textContent = 'מרענן…';
   try { await updateWeatherCard(c.lat, c.lng); } catch { ui.wxDesc.textContent = 'שגיאה במז״א'; }
 });
 
 // UI events
-document.getElementById('intent')?.addEventListener('change', onIntentChange);
+document.getElementById('intent').addEventListener('change', onIntentChange);
 document.querySelectorAll('[data-preset]').forEach(btn=>{
   btn.addEventListener('click', ()=> { setIntent(btn.dataset.preset); });
 });
 document.querySelectorAll('[data-activity]').forEach(btn=>{
   btn.addEventListener('click', ()=> { selectedActivity = btn.dataset.activity; doPlaces(); });
 });
-ui.searchBtn?.addEventListener('click', doPlaces);
-ui.goRouteBtn?.addEventListener('click', doRoute);
-ui.dest?.addEventListener('input', debounce(doAutocomplete, 250));
-ui.thinkBtn?.addEventListener('click', doThink);
+ui.searchBtn.addEventListener('click', doPlaces);
+ui.goRouteBtn.addEventListener('click', doRoute);
+ui.dest.addEventListener('input', debounce(doAutocomplete, 250));
+ui.thinkBtn.addEventListener('click', doThink);
 
 // AI Event Listeners
-ui.voiceBtn?.addEventListener('click', startVoiceInput);
-ui.aiRecommendBtn?.addEventListener('click', getAIRecommendations);
-ui.moodSelect?.addEventListener('change', onMoodChange);
-ui.aiToggle?.addEventListener('click', toggleAISettings);
-ui.voiceHelpBtn?.addEventListener('click', showVoiceHelp);
+ui.voiceBtn.addEventListener('click', startVoiceInput);
+ui.aiRecommendBtn.addEventListener('click', getAIRecommendations);
+ui.moodSelect.addEventListener('change', onMoodChange);
+ui.aiToggle.addEventListener('click', toggleAISettings);
+ui.voiceHelpBtn.addEventListener('click', showVoiceHelp);
 
 function setIntent(mode){ document.getElementById('intent').value = mode; onIntentChange(); }
 
@@ -324,7 +318,6 @@ function toggleFav(p){
   saveFavs(arr);
 }
 function renderFavs(){
-  if (!ui.favList) return; // Element doesn't exist in current UI
   const arr = getFavs();
   ui.favList.innerHTML = '';
   if (!arr.length) { ui.favList.textContent = 'אין מועדפים עדיין'; return; }
@@ -1195,13 +1188,13 @@ let currentWeatherData = null;
 let weatherForecastData = null;
 
 // Trip planning event listeners
-ui.tripToggle?.addEventListener('click', () => {
+ui.tripToggle.addEventListener('click', () => {
   const isHidden = ui.tripPlanForm.hidden;
   ui.tripPlanForm.hidden = !isHidden;
   ui.tripToggle.textContent = isHidden ? '📋' : '❌';
 });
 
-ui.tripDuration?.addEventListener('change', (e) => {
+ui.tripDuration.addEventListener('change', (e) => {
   ui.customHoursField.hidden = e.target.value !== 'custom';
 });
 
@@ -2131,25 +2124,3 @@ function initEnhancedGestures() {
     startX = startY = null;
   }, { passive: true });
 }
-
-// App initialization boot
-(async function boot() {
-  try {
-    // Initialize enhanced features
-    initEnhancedGestures();
-    // logPerformanceMetrics(); // Function not defined
-    
-    // Hide loading screen and show app
-    document.getElementById('loadingScreen')?.style.setProperty('display', 'none');
-    document.getElementById('app')?.style.setProperty('display', 'block');
-    document.getElementById('fail-panel')?.classList.add('hidden');
-    
-    console.log('[RW] App initialized successfully');
-  } catch (err) {
-    console.error('[RW] App init failed:', err);
-    document.getElementById('loadingScreen')?.style.setProperty('display', 'none');
-    document.getElementById('fail-panel')?.classList.remove('hidden');
-    const msg = document.getElementById('fail-msg');
-    if (msg) msg.textContent = String(err?.message || err);
-  }
-})();

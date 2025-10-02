@@ -12,7 +12,6 @@ class SimpleNavigation {
     this.setupNavigation();
     this.setupThemeToggle();
     this.setupFormInteractions(); // Add this to ensure search works
-    this.setupMap(); // Initialize map
     this.showView('search');
   }
 
@@ -92,17 +91,17 @@ class SimpleNavigation {
     }
 
     // Duration options
-    document.querySelectorAll('.duration-btn').forEach(option => {
+    document.querySelectorAll('.duration-option').forEach(option => {
       option.addEventListener('click', () => {
-        document.querySelectorAll('.duration-btn').forEach(o => o.classList.remove('selected'));
+        document.querySelectorAll('.duration-option').forEach(o => o.classList.remove('selected'));
         option.classList.add('selected');
       });
     });
 
     // Interest options
-    document.querySelectorAll('.interest-btn').forEach(option => {
+    document.querySelectorAll('.interest-option').forEach(option => {
       option.addEventListener('click', () => {
-        const selected = document.querySelectorAll('.interest-btn.selected');
+        const selected = document.querySelectorAll('.interest-option.selected');
         if (option.classList.contains('selected')) {
           option.classList.remove('selected');
         } else if (selected.length < 4) {
@@ -116,29 +115,14 @@ class SimpleNavigation {
     this.setupSearch();
     this.setupTripGeneration();
     this.setupVoiceButton();
-    this.setupQuickActions();
+    this.setupPlannerUI();
   }
 
   setupSearch() {
     const searchBtn = document.getElementById('searchBtn');
     const searchInput = document.getElementById('freeText');
     console.log('Setting up search - Button:', !!searchBtn, 'Input:', !!searchInput);
-
-    // Category buttons
-    document.querySelectorAll('.category-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        // Toggle selected state
-        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        // Get category and search
-        const category = btn.getAttribute('data-category');
-        const categoryText = btn.textContent.trim();
-        searchInput.value = categoryText;
-        searchBtn.click();
-      });
-    });
-
+    
     if (searchBtn && searchInput) {
       searchBtn.addEventListener('click', async () => {
         const query = searchInput.value.trim();
@@ -162,11 +146,10 @@ class SimpleNavigation {
                 }
               })
             });
-
+            
             const data = await response.json();
             const resultsList = document.getElementById('list');
-            resultsList.style.display = 'block'; // Show results
-
+            
             if (data.results && data.results.length > 0) {
               resultsList.innerHTML = data.results.map(result => `
                 <div class="search-result ai-powered">
@@ -189,7 +172,6 @@ class SimpleNavigation {
           } catch (error) {
             console.error('AI Search error:', error);
             const resultsList = document.getElementById('list');
-            resultsList.style.display = 'block'; // Show results even on error
             resultsList.innerHTML = `
               <div class="search-result">
                 <h3>🔄 AI Learning Mode</h3>
@@ -213,29 +195,15 @@ class SimpleNavigation {
     if (generateBtn) {
       generateBtn.addEventListener('click', async () => {
         console.log('Generating AI-powered trip...');
-
-        // Collect user preferences
-        const selectedDuration = document.querySelector('.duration-btn.selected')?.textContent || 'Full day';
-        const selectedInterests = Array.from(document.querySelectorAll('.interest-btn.selected')).map(el => el.textContent);
-        const budget = document.getElementById('budgetAmount')?.textContent || '300';
-
-        // Validate that at least one interest is selected
-        const tripDisplay = document.getElementById('enhancedTripDisplay');
-        if (selectedInterests.length === 0) {
-          tripDisplay.innerHTML = `
-            <div class="trip-result" style="background: var(--warning-bg, #fff3cd); border-left: 4px solid var(--warning, #ffc107); padding: 20px; border-radius: 8px;">
-              <h3>📝 Please Select Your Interests</h3>
-              <p>Choose at least one interest from the options above to generate a personalized trip!</p>
-              <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">💡 Tip: You can select up to 4 interests for the best recommendations.</p>
-            </div>
-          `;
-          return;
-        }
-
         generateBtn.textContent = '🧠 AI Thinking...';
         generateBtn.disabled = true;
-
+        
         try {
+          // Collect user preferences
+          const selectedDuration = document.querySelector('.duration-option.selected')?.textContent || 'Full day';
+          const selectedInterests = Array.from(document.querySelectorAll('.interest-option.selected')).map(el => el.textContent);
+          const budget = document.getElementById('budgetAmount')?.textContent || '300';
+          
           // Call Personal AI for recommendations
           const response = await fetch('https://premium-hybrid-473405-g7.uc.r.appspot.com/api/ai/recommend', {
             method: 'POST',
@@ -257,6 +225,7 @@ class SimpleNavigation {
           });
           
           const data = await response.json();
+          const tripDisplay = document.getElementById('enhancedTripDisplay');
           
           if (data.recommendations) {
             tripDisplay.innerHTML = `
@@ -295,13 +264,14 @@ class SimpleNavigation {
           
         } catch (error) {
           console.error('AI Trip generation error:', error);
+          const tripDisplay = document.getElementById('enhancedTripDisplay');
           tripDisplay.innerHTML = `
             <div class="trip-result ai-learning">
               <h3>🧠 AI Learning Your Preferences</h3>
               <div class="trip-summary">
                 <div class="trip-stat">
                   <span class="stat-label">Duration:</span>
-                  <span class="stat-value">${document.querySelector('.duration-btn.selected')?.textContent || 'Full day'}</span>
+                  <span class="stat-value">${document.querySelector('.duration-option.selected')?.textContent || 'Full day'}</span>
                 </div>
                 <div class="trip-stat">
                   <span class="stat-label">Budget:</span>
@@ -325,321 +295,258 @@ class SimpleNavigation {
 
   setupVoiceButton() {
     const voiceBtn = document.getElementById('voiceBtn');
-    if (!voiceBtn) return;
-
-    // Check for Web Speech API support
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      console.warn('Speech recognition not supported in this browser');
-      voiceBtn.disabled = true;
-      voiceBtn.title = 'Voice recognition not supported in this browser. Try Chrome or Edge.';
-      voiceBtn.querySelector('.voice-text').textContent = 'Not Supported';
-      return;
-    }
-
-    // Initialize speech recognition
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    let isListening = false;
-
-    // Handle recognition results
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      const confidence = event.results[0][0].confidence;
-
-      console.log('Voice input:', transcript, 'Confidence:', confidence);
-
-      const statusEl = document.getElementById('voiceStatus');
-      const responseEl = document.getElementById('voiceResponse');
-
-      if (statusEl) {
-        statusEl.textContent = '🤖 Processing your command...';
-      }
-
-      // Process the voice command
-      this.processVoiceCommand(transcript);
-
-      setTimeout(() => {
-        if (statusEl) statusEl.textContent = '';
-        if (responseEl) {
-          responseEl.textContent = `✅ Heard: "${transcript}"`;
-          responseEl.style.display = 'block';
-        }
-      }, 500);
-    };
-
-    // Handle recognition errors
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
-
-      isListening = false;
-      voiceBtn.classList.remove('listening');
-      voiceBtn.querySelector('.voice-text').textContent = 'Press & Hold to Speak';
-
-      const statusEl = document.getElementById('voiceStatus');
-      const responseEl = document.getElementById('voiceResponse');
-
-      let errorMessage = '';
-      switch(event.error) {
-        case 'no-speech':
-          errorMessage = '❌ No speech detected. Please try again.';
-          break;
-        case 'audio-capture':
-          errorMessage = '❌ Microphone not found. Please check your device.';
-          break;
-        case 'not-allowed':
-          errorMessage = '❌ Microphone permission denied. Please enable it in settings.';
-          break;
-        case 'network':
-          errorMessage = '❌ Network error. Please check your connection.';
-          break;
-        default:
-          errorMessage = `❌ Error: ${event.error}`;
-      }
-
-      if (statusEl) {
-        statusEl.textContent = errorMessage;
-        setTimeout(() => {
-          statusEl.textContent = '';
-        }, 3000);
-      }
-      if (responseEl) {
-        responseEl.textContent = errorMessage;
-        responseEl.style.display = 'block';
-      }
-    };
-
-    // Handle recognition end
-    recognition.onend = () => {
-      isListening = false;
-      voiceBtn.classList.remove('listening');
-      voiceBtn.querySelector('.voice-text').textContent = 'Press & Hold to Speak';
-    };
-
-    // Mouse down - start listening
-    voiceBtn.addEventListener('mousedown', () => {
-      if (!isListening) {
-        try {
-          recognition.start();
+    if (voiceBtn) {
+      let isListening = false;
+      
+      voiceBtn.addEventListener('mousedown', () => {
+        if (!isListening) {
           isListening = true;
           voiceBtn.classList.add('listening');
           voiceBtn.querySelector('.voice-text').textContent = 'Listening... Release to stop';
-
+          
           const statusEl = document.getElementById('voiceStatus');
           if (statusEl) {
             statusEl.textContent = '🎤 Listening for your voice command...';
           }
-
-          const responseEl = document.getElementById('voiceResponse');
-          if (responseEl) {
-            responseEl.style.display = 'none';
-          }
-        } catch (error) {
-          console.error('Recognition start error:', error);
-        }
-      }
-    });
-
-    // Mouse up - stop listening
-    voiceBtn.addEventListener('mouseup', () => {
-      if (isListening) {
-        recognition.stop();
-      }
-    });
-
-    // Mouse leave - stop listening if active
-    voiceBtn.addEventListener('mouseleave', () => {
-      if (isListening) {
-        recognition.stop();
-      }
-    });
-  }
-
-  processVoiceCommand(transcript) {
-    const lowerTranscript = transcript.toLowerCase();
-    console.log('Processing command:', lowerTranscript);
-
-    // Parse voice commands and execute actions
-    if (lowerTranscript.includes('search for') || lowerTranscript.includes('find') || lowerTranscript.includes('look for')) {
-      // Extract search query
-      let query = lowerTranscript
-        .replace('search for', '')
-        .replace('find', '')
-        .replace('look for', '')
-        .replace('me', '')
-        .trim();
-
-      if (query) {
-        this.showView('search');
-        setTimeout(() => {
-          const searchInput = document.getElementById('freeText');
-          const searchBtn = document.getElementById('searchBtn');
-          if (searchInput && searchBtn) {
-            searchInput.value = query;
-            searchBtn.click();
-          }
-        }, 300);
-      }
-    } else if (lowerTranscript.includes('food') || lowerTranscript.includes('restaurant') || lowerTranscript.includes('eat')) {
-      this.showView('search');
-      setTimeout(() => {
-        const searchInput = document.getElementById('freeText');
-        const searchBtn = document.getElementById('searchBtn');
-        if (searchInput && searchBtn) {
-          searchInput.value = 'restaurants';
-          searchBtn.click();
-        }
-      }, 300);
-    } else if (lowerTranscript.includes('plan') && (lowerTranscript.includes('trip') || lowerTranscript.includes('vacation'))) {
-      this.showView('trip');
-    } else if (lowerTranscript.includes('generate') && lowerTranscript.includes('trip')) {
-      this.showView('trip');
-      setTimeout(() => {
-        const generateBtn = document.getElementById('generateTripBtn');
-        if (generateBtn) {
-          generateBtn.click();
-        }
-      }, 500);
-    } else if (lowerTranscript.includes('map') || lowerTranscript.includes('navigation') || lowerTranscript.includes('location')) {
-      this.showView('map');
-    } else if (lowerTranscript.includes('weather')) {
-      this.showView('map');
-    } else if (lowerTranscript.includes('profile') || lowerTranscript.includes('setting')) {
-      this.showView('profile');
-    } else if (lowerTranscript.includes('go to') || lowerTranscript.includes('open')) {
-      // Try to extract page name
-      if (lowerTranscript.includes('search')) {
-        this.showView('search');
-      } else if (lowerTranscript.includes('ai') || lowerTranscript.includes('assistant')) {
-        this.showView('ai');
-      } else if (lowerTranscript.includes('trip')) {
-        this.showView('trip');
-      } else if (lowerTranscript.includes('map')) {
-        this.showView('map');
-      } else if (lowerTranscript.includes('profile')) {
-        this.showView('profile');
-      }
-    } else {
-      // Default: treat as search query
-      this.showView('search');
-      setTimeout(() => {
-        const searchInput = document.getElementById('freeText');
-        const searchBtn = document.getElementById('searchBtn');
-        if (searchInput && searchBtn) {
-          searchInput.value = transcript;
-          searchBtn.click();
-        }
-      }, 300);
-    }
-  }
-
-  setupQuickActions() {
-    document.querySelectorAll('.action-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const action = btn.getAttribute('data-action');
-
-        // Switch to appropriate view and trigger action
-        switch(action) {
-          case 'find-food':
-            // Go to search view and search for food
-            this.showView('search');
-            setTimeout(() => {
-              const searchInput = document.getElementById('freeText');
-              const searchBtn = document.getElementById('searchBtn');
-              if (searchInput && searchBtn) {
-                searchInput.value = '🍽️ Food';
-                searchBtn.click();
-              }
-            }, 100);
-            break;
-
-          case 'weather':
-            // Show weather info - scroll to map view where weather is displayed
-            this.showView('map');
-            break;
-
-          case 'navigate':
-            // Go to map view for directions
-            this.showView('map');
-            break;
-
-          case 'recommend':
-            // Go to trip planning view
-            this.showView('trip');
-            break;
         }
       });
-    });
+
+      voiceBtn.addEventListener('mouseup', () => {
+        if (isListening) {
+          isListening = false;
+          voiceBtn.classList.remove('listening');
+          voiceBtn.querySelector('.voice-text').textContent = 'Press & Hold to Speak';
+          
+          const statusEl = document.getElementById('voiceStatus');
+          const responseEl = document.getElementById('voiceResponse');
+          
+          if (statusEl) {
+            statusEl.textContent = '🤖 Processing your request...';
+          }
+          
+          setTimeout(() => {
+            if (statusEl) statusEl.textContent = '';
+            if (responseEl) {
+              responseEl.textContent = 'Demo: Voice recognition would work here. The AI would process your speech and provide intelligent responses!';
+              responseEl.style.display = 'block';
+            }
+          }, 1500);
+        }
+      });
+
+      voiceBtn.addEventListener('mouseleave', () => {
+        if (isListening) {
+          isListening = false;
+          voiceBtn.classList.remove('listening');
+          voiceBtn.querySelector('.voice-text').textContent = 'Press & Hold to Speak';
+        }
+      });
+    }
   }
 
-  setupMap() {
-    // Wait for Leaflet to be loaded
-    if (typeof L === 'undefined') {
-      console.log('Waiting for Leaflet to load...');
-      setTimeout(() => this.setupMap(), 100);
-      return;
+  setupPlannerUI() {
+    // Toggle start source buttons
+    const btnCurrent = document.getElementById('btnStartCurrent');
+    const btnHotel = document.getElementById('btnStartHotel');
+    const hotelRow = document.getElementById('hotelRow');
+    
+    if (btnCurrent && btnHotel && hotelRow) {
+      btnCurrent.addEventListener('click', () => {
+        btnCurrent.classList.add('active');
+        btnHotel.classList.remove('active');
+        hotelRow.style.display = 'none';
+      });
+      
+      btnHotel.addEventListener('click', () => {
+        btnHotel.classList.add('active');
+        btnCurrent.classList.remove('active');
+        hotelRow.style.display = 'flex';
+      });
     }
-
-    console.log('Initializing map...');
-
-    try {
-      // Initialize Leaflet map
-      this.map = L.map('map', { zoomControl: true }).setView([32.0853, 34.7818], 13); // Tel Aviv coordinates
-
-      // Add OpenStreetMap tiles
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(this.map);
-
-      // Add a marker for current location
-      this.userMarker = L.marker([32.0853, 34.7818]).addTo(this.map)
-        .bindPopup('Your Location')
-        .openPopup();
-
-      console.log('Map initialized successfully');
-
-      // Setup location button
-      const locationBtn = document.getElementById('locationBtn');
-      if (locationBtn) {
-        locationBtn.addEventListener('click', () => {
-          console.log('Location button clicked');
-          locationBtn.classList.add('active');
-
-          // Try to get user's actual location
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-
-                // Update map center and marker
-                this.map.setView([lat, lng], 15);
-                this.userMarker.setLatLng([lat, lng]);
-                this.userMarker.bindPopup('You are here!').openPopup();
-
-                console.log('Location updated:', lat, lng);
-                locationBtn.classList.remove('active');
-              },
-              (error) => {
-                console.error('Geolocation error:', error);
-                alert('Unable to get your location. Please enable location services.');
-                locationBtn.classList.remove('active');
-              }
-            );
+    
+    // Update slider value displays
+    const nearRadius = document.getElementById('nearRadius');
+    const nearRadiusVal = document.getElementById('nearRadiusVal');
+    if (nearRadius && nearRadiusVal) {
+      nearRadius.addEventListener('input', () => {
+        nearRadiusVal.textContent = nearRadius.value;
+      });
+    }
+    
+    const detourMin = document.getElementById('detourMin');
+    const detourMinVal = document.getElementById('detourMinVal');
+    if (detourMin && detourMinVal) {
+      detourMin.addEventListener('input', () => {
+        detourMinVal.textContent = detourMin.value;
+      });
+    }
+    
+    // Plan Day button handler
+    const btnPlanDay = document.getElementById('btnPlanDay');
+    if (btnPlanDay) {
+      btnPlanDay.addEventListener('click', async () => {
+        const resultsDiv = document.getElementById('planner-results');
+        if (!resultsDiv) return;
+        
+        resultsDiv.innerHTML = '<div style="padding:20px; text-align:center;">🧠 Planning your day...</div>';
+        btnPlanDay.disabled = true;
+        btnPlanDay.textContent = 'Planning...';
+        
+        try {
+          const lang = document.documentElement.getAttribute('data-lang') || 'he';
+          const isHotelMode = btnHotel && btnHotel.classList.contains('active');
+          
+          let body = {
+            mode: 'drive',
+            near_origin: {
+              radius_km: parseInt(nearRadius?.value || '5'),
+              types: ['tourist_attraction', 'viewpoint', 'museum'],
+              min_rating: 4.3,
+              open_now: false,
+              limit: 8
+            },
+            sar: {
+              query: 'viewpoint|restaurant|ice_cream',
+              max_detour_min: parseInt(detourMin?.value || '15'),
+              max_results: 12
+            }
+          };
+          
+          if (isHotelMode) {
+            // Hotel mode: use origin_query
+            const hotelInput = document.getElementById('hotelInput');
+            const hotelName = hotelInput?.value?.trim();
+            if (!hotelName) {
+              resultsDiv.innerHTML = '<div style="padding:20px; color:#d32f2f;">⚠️ Please enter a hotel name</div>';
+              btnPlanDay.disabled = false;
+              btnPlanDay.textContent = document.querySelector('[data-i18n="planner.plan_day"]')?.textContent || 'Plan Day';
+              return;
+            }
+            body.origin_query = hotelName;
           } else {
-            alert('Geolocation is not supported by your browser');
-            locationBtn.classList.remove('active');
+            // Current location mode: use geolocation
+            try {
+              const pos = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                  enableHighAccuracy: false,
+                  timeout: 10000,
+                  maximumAge: 300000
+                });
+              });
+              body.origin = {
+                lat: pos.coords.latitude,
+                lon: pos.coords.longitude
+              };
+            } catch (geoErr) {
+              console.error('Geolocation error:', geoErr);
+              resultsDiv.innerHTML = '<div style="padding:20px; color:#d32f2f;">⚠️ Could not get your location. Please enable location services or use hotel mode.</div>';
+              btnPlanDay.disabled = false;
+              btnPlanDay.textContent = document.querySelector('[data-i18n="planner.plan_day"]')?.textContent || 'Plan Day';
+              return;
+            }
           }
-        });
-      }
-    } catch (error) {
-      console.error('Map initialization error:', error);
+          
+          // Optional destination
+          const destInput = document.getElementById('destInput');
+          const destQuery = destInput?.value?.trim();
+          if (destQuery) {
+            body.dest_query = destQuery;
+          }
+          
+          // Call backend API via proxy
+          const response = await fetch('https://roamwise-proxy-971999716773.us-central1.run.app/planner/plan-day', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-lang': lang
+            },
+            credentials: 'include',
+            body: JSON.stringify(body)
+          });
+          
+          const data = await response.json();
+          
+          if (!data.ok || !data.plan) {
+            throw new Error(data.error || 'Plan failed');
+          }
+          
+          // Render results
+          const { plan } = data;
+          const { summary, timeline } = plan;
+          
+          let html = '<div class="header">';
+          html += `<div><strong>🗺️ Day Plan</strong></div>`;
+          if (summary.origin_name) {
+            html += `<div>📍 Starting from: ${summary.origin_name}</div>`;
+          }
+          html += `<div>🎯 Mode: ${summary.plan_mode} • POIs: ${summary.count}</div>`;
+          if (summary.near_origin_scanned) {
+            html += `<div>🔍 Near origin: ${summary.near_origin_count || 0} found</div>`;
+          }
+          if (summary.sar_scanned) {
+            html += `<div>🛣️ Along route: ${summary.sar_count || 0} found</div>`;
+          }
+          html += '</div>';
+          
+          if (timeline && timeline.length > 0) {
+            let cumMin = 0;
+            for (const leg of timeline) {
+              if (leg.to?.kind === 'poi') {
+                const eta = leg.eta_seconds ? Math.round(leg.eta_seconds / 60) : null;
+                cumMin = eta || cumMin;
+                
+                html += '<div class="poi">';
+                html += `<div><strong>${leg.to.name || 'POI'}</strong></div>`;
+                if (leg.to.rating) {
+                  html += `<div class="meta">⭐ ${leg.to.rating.toFixed(1)}`;
+                  if (leg.to.user_ratings_total) {
+                    html += ` (${leg.to.user_ratings_total} reviews)`;
+                  }
+                  html += '</div>';
+                }
+                if (eta !== null) {
+                  html += `<div class="meta">🕐 ETA: +${cumMin} min from start</div>`;
+                }
+                if (leg.to.detour_min !== undefined) {
+                  html += `<div class="meta">🔀 Detour: ${leg.to.detour_min} min</div>`;
+                }
+                html += '</div>';
+              }
+            }
+          } else {
+            html += '<div style="padding:20px;">No POIs found. Try adjusting the radius or destination.</div>';
+          }
+          
+          // Add SAR results if present
+          if (summary.sar_results && summary.sar_results.length > 0) {
+            html += '<hr><div class="header"><strong>🛣️ Along-Route Discoveries</strong></div>';
+            for (const sar of summary.sar_results.slice(0, 6)) {
+              html += '<div class="poi">';
+              html += `<div><strong>${sar.name || 'Place'}</strong></div>`;
+              if (sar.rating) {
+                html += `<div class="meta">⭐ ${sar.rating.toFixed(1)}`;
+                if (sar.user_ratings_total) {
+                  html += ` (${sar.user_ratings_total} reviews)`;
+                }
+                html += '</div>';
+              }
+              if (sar.detour_min !== undefined) {
+                html += `<div class="meta">🔀 Detour: ${sar.detour_min} min</div>`;
+              }
+              html += '</div>';
+            }
+          }
+          
+          resultsDiv.innerHTML = html;
+          
+        } catch (error) {
+          console.error('Planner error:', error);
+          resultsDiv.innerHTML = `<div style="padding:20px; color:#d32f2f;">❌ Error: ${error.message || 'Failed to plan day'}</div>`;
+        } finally {
+          btnPlanDay.disabled = false;
+          btnPlanDay.textContent = document.querySelector('[data-i18n="planner.plan_day"]')?.textContent || 'Plan Day';
+        }
+      });
     }
   }
 }
