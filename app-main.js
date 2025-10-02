@@ -453,8 +453,8 @@ class SimpleNavigation {
             body.dest_query = destQuery;
           }
           
-          // Call backend API
-          const response = await fetch('https://roamwise-backend-v2-971999716773.us-central1.run.app/planner/plan-day', {
+          // Call backend API via proxy
+          const response = await fetch('https://roamwise-proxy-971999716773.us-central1.run.app/planner/plan-day', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
