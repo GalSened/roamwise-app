@@ -1,0 +1,161 @@
+{
+  "app": {
+    "title": "Traveling"
+  },
+  "nav": {
+    "search": "Search",
+    "trip": "Trip",
+    "ai": "AI Assistant",
+    "map": "Map",
+    "profile": "Profile"
+  },
+  "search": {
+    "greeting": "Hello! Where would you like to go?",
+    "placeholder": "Search for places, routes, or activities...",
+    "search_btn": "Search",
+    "categories": {
+      "food": "🍽️ Food",
+      "nature": "🌳 Nature",
+      "culture": "🎭 Culture",
+      "shopping": "🛍️ Shopping"
+    }
+  },
+  "trip": {
+    "title": "Plan Your Perfect Day",
+    "duration_label": "Duration",
+    "duration": {
+      "half_day": "Half day",
+      "full_day": "Full day",
+      "weekend": "Weekend"
+    },
+    "interests_label": "Your Interests (Select up to 4)",
+    "interests": {
+      "food": "🍽️ Food",
+      "nature": "🌳 Nature",
+      "culture": "🎭 Culture",
+      "shopping": "🛍️ Shopping",
+      "nightlife": "🌃 Nightlife",
+      "adventure": "🏔️ Adventure",
+      "relaxation": "🧘 Relaxation",
+      "history": "🏛️ History"
+    },
+    "budget_label": "Budget",
+    "budget_value": "₪{amount}",
+    "generate_btn": "🤖 Generate Smart Trip"
+  },
+  "ai": {
+    "title": "AI Assistant",
+    "subtitle": "Your personal travel companion powered by AI",
+    "voice_btn": "Press & Hold to Speak",
+    "voice_status": "",
+    "voice_response": "",
+    "examples_title": "Try saying:",
+    "examples": {
+      "food": "\"Find me restaurants nearby\"",
+      "trip": "\"Plan a trip for me\"",
+      "weather": "\"What's the weather like?\"",
+      "navigate": "\"Navigate to the beach\""
+    }
+  },
+  "map": {
+    "title": "Map View",
+    "route_metrics": "Route Information",
+    "route_distance": "Distance",
+    "route_duration": "Duration",
+    "route_eta": "ETA",
+    "nav_buttons": "Navigate with:",
+    "nav_google": "Google Maps",
+    "nav_apple": "Apple Maps",
+    "nav_waze": "Waze"
+  },
+  "profile": {
+    "title": "Your Profile",
+    "pace_label": "Travel Pace",
+    "pace": {
+      "slow": "Slow & Steady",
+      "normal": "Normal",
+      "fast": "Fast Paced"
+    },
+    "likes_label": "I Like",
+    "likes": {
+      "food": "Food & Dining",
+      "nature": "Nature & Parks",
+      "culture": "Culture & Arts",
+      "shopping": "Shopping",
+      "nightlife": "Nightlife",
+      "sports": "Sports & Activities"
+    },
+    "avoid_label": "Route Preferences",
+    "avoid": {
+      "tolls": "Avoid Tolls",
+      "ferries": "Avoid Ferries",
+      "highways": "Avoid Highways"
+    },
+    "dietary_label": "Dietary Restrictions",
+    "dietary": {
+      "vegetarian": "Vegetarian",
+      "vegan": "Vegan",
+      "kosher": "Kosher",
+      "halal": "Halal",
+      "gluten_free": "Gluten Free"
+    },
+    "budget_label": "Budget Range",
+    "budget_min": "Min",
+    "budget_max": "Max",
+    "save_btn": "Save Preferences"
+  },
+  "signin": {
+    "title": "Family Mode Sign In",
+    "subtitle": "Enter your phone number to continue",
+    "phone_label": "Phone Number",
+    "name_label": "Your Name",
+    "submit_btn": "Continue",
+    "submit_finish": "Finish",
+    "welcome": "Welcome back, {name}!",
+    "new_user": "New number! Please enter your name",
+    "welcome_new": "Welcome, {name}!",
+    "error_name": "Please enter your name",
+    "error_signin": "Sign in error. Please try again"
+  },
+  "offline": {
+    "banner": "⚠️ You're offline — some features may be limited"
+  },
+  "route": {
+    "avoids_relaxed": "⚠️ Avoids relaxed",
+    "avoids_honored": "✓ Avoids honored",
+    "computing": "Computing route...",
+    "no_route": "No route found",
+    "error": "Route computation failed"
+  },
+  "format": {
+    "km": "km",
+    "m": "m",
+    "hr": "hr",
+    "min": "min",
+    "number_format": "en-US"
+  },
+  "dev": {
+    "drawer_title": "Developer Tools",
+    "release_notes": "📋 Release Notes",
+    "send_feedback": "💬 Send Feedback",
+    "flags": "Feature Flags"
+  },
+  "feedback": {
+    "title": "Send Feedback",
+    "placeholder": "Share your thoughts...",
+    "send_btn": "Send",
+    "cancel_btn": "Cancel",
+    "status_sending": "Sending…",
+    "status_success": "Thanks! Feedback sent.",
+    "status_error": "Failed to send. Try again later.",
+    "status_empty": "Please write something first."
+  },
+  "common": {
+    "install": "Install",
+    "loading": "Loading...",
+    "error": "Error",
+    "close": "Close",
+    "ok": "OK",
+    "cancel": "Cancel"
+  }
+}

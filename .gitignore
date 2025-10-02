@@ -5,6 +5,8 @@ backend/node_modules/
 # Database
 backend/roamwise.db
 backend/*.db
+backend/*.db-shm
+backend/*.db-wal
 
 # Build
 dist/
@@ -21,6 +23,9 @@ Thumbs.db
 *.swo
 *~
 
-# Environment
+# Environment & Secrets
 .env
-.env.local
+.env.*
+*.key
+*.pem
+secrets/

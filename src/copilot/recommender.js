@@ -13,7 +13,29 @@ import { generateCandidates } from './candidates.js';
 // ---- Constants ----
 const COOLDOWN_MS = 8 * 60 * 1000; // 8 minutes
 const MAX_SUGGESTIONS = 2;
-const EMIT_INTERVAL = 30000; // 30 seconds
+
+// ---- Dynamic Emit Interval (based on profile pace) ----
+/**
+ * Get suggestion emit interval based on user's pace preference
+ * @returns {number} Interval in milliseconds
+ */
+function getEmitInterval() {
+  const profilePrefs = window.__rwProfile?.preferences || {};
+  const pace = profilePrefs.pace || 'normal';
+
+  // Base cadence in minutes based on pace
+  let cadenceMinutes;
+  if (pace === 'fast') {
+    cadenceMinutes = 8;
+  } else if (pace === 'slow') {
+    cadenceMinutes = 25;
+  } else {
+    cadenceMinutes = 15; // normal
+  }
+
+  // Convert to milliseconds
+  return cadenceMinutes * 60 * 1000;
+}
 
 // ---- localStorage Helpers ----
 function loadMem() {
@@ -140,8 +162,9 @@ export class Recommender {
   handleFrame(frame) {
     const now = Date.now();
 
-    // Global rate limit: only emit suggestions every ~30s
-    if ((this.mem.lastEmitTs ?? 0) + EMIT_INTERVAL > now) {
+    // Global rate limit: use pace-based cadence from profile
+    const emitInterval = getEmitInterval();
+    if ((this.mem.lastEmitTs ?? 0) + emitInterval > now) {
       return;
     }
 

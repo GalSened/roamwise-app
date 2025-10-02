@@ -1,0 +1,64 @@
+name: must-test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check Variables
+        run: |
+          echo "PROXY: ${{ vars.ROAMWISE_PROXY_URL }}"
+          echo "BACKEND_V2: ${{ vars.ROAMWISE_BACKEND_V2_URL }}"
+          if [ -z "${{ vars.ROAMWISE_PROXY_URL }}" ]; then
+            echo "❌ ROAMWISE_PROXY_URL variable not set"
+            exit 1
+          fi
+          if [ -z "${{ vars.ROAMWISE_BACKEND_V2_URL }}" ]; then
+            echo "❌ ROAMWISE_BACKEND_V2_URL variable not set"
+            exit 1
+          fi
+
+      - name: Test /api/route endpoint
+        run: |
+          PROXY="${{ vars.ROAMWISE_PROXY_URL }}"
+          echo "Testing route endpoint at $PROXY/api/route"
+          RESPONSE=$(curl -s -X POST "$PROXY/api/route" \
+            -H 'content-type: application/json' \
+            -H "x-request-id: gh_action_route_${{ github.run_id }}" \
+            -d '{"stops":[{"lat":32.0853,"lon":34.7818},{"lat":32.08,"lon":34.8}]}')
+          echo "Response: $RESPONSE"
+          echo "$RESPONSE" | jq -e '.ok == true' || (echo "❌ Route test failed" && exit 1)
+          echo "✅ Route test passed"
+
+      - name: Test /api/hazards endpoint
+        run: |
+          PROXY="${{ vars.ROAMWISE_PROXY_URL }}"
+          echo "Testing hazards endpoint at $PROXY/api/hazards"
+          RESPONSE=$(curl -s "$PROXY/api/hazards?lat=32.0853&lon=34.7818&radius=10000" \
+            -H "x-request-id: gh_action_hazards_${{ github.run_id }}")
+          echo "Response: $RESPONSE"
+          echo "$RESPONSE" | jq -e '.ok == true' || (echo "❌ Hazards test failed" && exit 1)
+          echo "✅ Hazards test passed"
+
+      - name: Test /admin/healthz endpoint
+        run: |
+          BACKEND="${{ vars.ROAMWISE_BACKEND_V2_URL }}"
+          echo "Testing healthz endpoint at $BACKEND/admin/healthz"
+          RESPONSE=$(curl -s "$BACKEND/admin/healthz")
+          echo "Response: $RESPONSE"
+          # Check that we get a valid JSON response with ok field
+          echo "$RESPONSE" | jq -e 'has("ok")' || (echo "❌ Health test failed" && exit 1)
+          echo "✅ Health test passed"
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "✅ All smoke tests passed!"
+          echo ""
+          echo "Request IDs for log verification:"
+          echo "- Route: gh_action_route_${{ github.run_id }}"
+          echo "- Hazards: gh_action_hazards_${{ github.run_id }}"

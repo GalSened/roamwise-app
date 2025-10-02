@@ -1,6 +1,19 @@
 // ---- Production Candidate Generation ----
 
 /**
+ * Get scenic density setting from localStorage
+ * @returns {'low'|'normal'|'high'}
+ */
+function getScenicDensity() {
+  try {
+    const val = localStorage.getItem('scenicDensity');
+    return (val === 'low' || val === 'high') ? val : 'normal';
+  } catch {
+    return 'normal';
+  }
+}
+
+/**
  * Generate suggestion candidates based on context frame
  * @param {import('./context-types.js').ContextFrame} frame - Current context frame
  * @param {boolean} visible - Whether tab is currently visible
@@ -74,13 +87,16 @@ export function generateCandidates(frame, visible) {
   // ---- Suggestion 4: Scenic Viewpoint ----
   // Periodic nudge if moving and no severe weather
   if (moving && !severe) {
+    const density = getScenicDensity();
+    const scenicMin = density === 'low' ? 30 : density === 'high' ? 8 : 15;
+
     out.push({
-      id: `scenic_${minuteBucket(15)}`, // 15-minute bucket
+      id: `scenic_${minuteBucket(scenicMin)}`,
       ts: now,
       kind: 'scenic',
       title: 'Scenic viewpoint nearby (check when safe)',
-      reason: 'Periodic scenic check',
-      expiresAt: now + 15 * 60 * 1000, // 15 minutes
+      reason: `Scenic density: ${density}`,
+      expiresAt: now + scenicMin * 60 * 1000,
       safety: { minSpeedKph: 20, visibleOnly: false },
       acceptAction: { type: 'SHOW_SCENIC', payload: {} },
       declineAction: { type: 'SNOOZE', payload: { minutes: 30 } },

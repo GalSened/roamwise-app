@@ -5,6 +5,7 @@ import express from 'express';
 import { z } from 'zod';
 import { getProfileByUserId, updateProfile } from '../db.js';
 import { authRequired } from '../auth.js';
+import { observe } from '../ops/metrics.js';
 
 const router = express.Router();
 
@@ -36,6 +37,12 @@ router.get('/', authRequired, (req, res) => {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
+    // Log event
+    req.log.info({ event: 'profile_get', user_id: userId }, 'Profile retrieved');
+
+    // Record metrics
+    observe('profile_get', 1, true);
+
     // Return profile with user info
     res.json({
       user: {
@@ -57,7 +64,7 @@ router.get('/', authRequired, (req, res) => {
       updatedAt: profile.updated_at
     });
   } catch (error) {
-    console.error('[Profile] Get profile error:', error);
+    req.log.error({ err: error }, 'Get profile error');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -91,7 +98,11 @@ router.put('/', authRequired, (req, res) => {
     // Get updated profile
     const profile = getProfileByUserId(userId);
 
-    console.log('[Profile] Updated profile for user:', userId);
+    // Log event
+    req.log.info({ event: 'profile_put', user_id: userId }, 'Profile updated');
+
+    // Record metrics
+    observe('profile_put', 1, true);
 
     res.json({
       success: true,
@@ -108,7 +119,7 @@ router.put('/', authRequired, (req, res) => {
       updatedAt: profile.updated_at
     });
   } catch (error) {
-    console.error('[Profile] Update profile error:', error);
+    req.log.error({ err: error }, 'Update profile error');
     res.status(500).json({ error: 'Internal server error' });
   }
 });

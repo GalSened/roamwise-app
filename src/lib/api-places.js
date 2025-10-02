@@ -1,5 +1,6 @@
 import { cacheGet, cachePut, stableKeyFrom } from './cache.js';
 import { flags } from './flags.js';
+import { getLang } from './i18n.js';
 
 const PLACES_TTL = 1000 * 60 * 5; // 5 minutes cache
 
@@ -77,10 +78,56 @@ export async function apiPlacesNearby(params) {
     'places',
     key,
     async () => {
-      const resp = await fetch(`/api/places/nearby?${qs}`, { method: 'GET' });
+      const resp = await fetch(`/api/places/nearby?${qs}`, {
+        method: 'GET',
+        headers: {
+          'x-lang': getLang()
+        }
+      });
       if (!resp.ok) throw new Error(`places ${resp.status}`);
       return resp.json();
     },
     PLACES_TTL
   );
+}
+
+/**
+ * Search for places using Google Places API text search
+ * @param {Object} params - Search parameters
+ * @param {string} params.query - Search query text
+ * @param {boolean} [params.openNow] - Filter to places open now
+ * @param {number} [params.minRating] - Minimum rating (0-5)
+ * @param {string[]} [params.priceLevels] - Price level filters
+ * @param {string} [params.includedType] - Place type (e.g., 'restaurant', 'tourist_attraction')
+ * @param {Object} [params.center] - Center point for location bias
+ * @param {number} [params.center.lat] - Latitude
+ * @param {number} [params.center.lon] - Longitude
+ * @param {number} [params.radius] - Radius in meters for location bias
+ * @returns {Promise<{ok: boolean, cached?: boolean, items: Array}>}
+ */
+export async function apiPlacesSearch({ query, openNow=false, minRating=0, includedType, priceLevels, center, radius=2000 }){
+  const body = {
+    query, openNow, minRating,
+    ...(includedType ? { includedType } : {}),
+    ...(priceLevels?.length ? { priceLevels } : {}),
+    ...(center ? { bias: { center: { latitude: center.lat, longitude: center.lon }, radius } } : {})
+  };
+  const r = await fetch('/api/places/search', {
+    method:'POST',
+    headers:{ 'content-type':'application/json', 'x-lang': getLang() },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('places_search_failed');
+  return r.json();
+}
+
+/**
+ * Get detailed information about a specific place
+ * @param {string} id - Place ID from Google Places API
+ * @returns {Promise<{ok: boolean, cached?: boolean, place: Object}>}
+ */
+export async function apiPlaceDetails(id){
+  const r = await fetch(`/api/places/${encodeURIComponent(id)}`, { headers: { 'x-lang': getLang() } });
+  if (!r.ok) throw new Error('place_details_failed');
+  return r.json();
 }

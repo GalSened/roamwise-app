@@ -6,7 +6,8 @@
     "typecheck": "tsc -p tsconfig.base.json",
     "e2e": "playwright test",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "smoke": "./scripts/must-test.sh"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

@@ -116,9 +116,83 @@ export function mountDevDrawer() {
     `;
   };
 
+  // Release Notes button
+  const notesBtn = document.createElement('button');
+  notesBtn.textContent = '📋 Release Notes';
+  notesBtn.style.cssText = `
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: 500;
+  `;
+  notesBtn.onclick = () => {
+    if (window.openNotes) window.openNotes();
+  };
+
+  // Feedback button
+  const feedbackBtn = document.createElement('button');
+  feedbackBtn.textContent = '💬 Send Feedback';
+  feedbackBtn.style.cssText = `
+    background: #10b981;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: 500;
+  `;
+  feedbackBtn.onclick = () => {
+    if (window.openFeedback) window.openFeedback();
+  };
+
+  // Scenic density control
+  const SD_KEY = 'scenicDensity';
+  const loadScenicDensity = () => {
+    try {
+      return localStorage.getItem(SD_KEY) || 'normal';
+    } catch {
+      return 'normal';
+    }
+  };
+  const saveScenicDensity = (v) => {
+    try {
+      localStorage.setItem(SD_KEY, v);
+    } catch {}
+  };
+
+  const scenicLabel = document.createElement('label');
+  scenicLabel.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+  scenicLabel.innerHTML = `
+    <span style="flex: 1;">Scenic density</span>
+    <select id="scenic-density" style="
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+    ">
+      <option value="low">Low (30min)</option>
+      <option value="normal">Normal (15min)</option>
+      <option value="high">High (8min)</option>
+    </select>
+  `;
+
+  const scenicSelect = scenicLabel.querySelector('#scenic-density');
+  scenicSelect.value = loadScenicDensity();
+  scenicSelect.addEventListener('change', (e) => {
+    saveScenicDensity(e.target.value);
+  });
+
   // Assemble
   content.appendChild(toggleLabel);
   content.appendChild(clearBtn);
+  content.appendChild(scenicLabel);
+  content.appendChild(notesBtn);
+  content.appendChild(feedbackBtn);
   content.appendChild(info);
 
   drawer.appendChild(header);

@@ -1,13 +1,14 @@
-import { cacheGet, cachePut, stableKeyFrom } from './cache';
+import { cacheGet, cachePut, stableKeyFrom, type JSONVal } from './cache';
 import { flags } from './flags';
 
 const ROUTE_TTL = 1000 * 60 * 60 * 12; // 12h
 const WEATHER_TTL = 1000 * 60 * 60 * 3; // 3h
 const ITIN_TTL = 1000 * 60 * 60 * 24; // 24h
+const HAZARDS_TTL = 1000 * 60 * 10; // 10min
 
 // Helper: race network with (optional) cache for smoother offline-first
-async function withCache<T>(
-  kind: 'route' | 'weather' | 'itinerary',
+async function withCache<T extends JSONVal>(
+  kind: 'route' | 'weather' | 'itinerary' | 'hazards',
   key: string,
   fetcher: () => Promise<T>,
   ttl?: number
@@ -111,5 +112,28 @@ export async function apiGetItinerary(id: string): Promise<any> {
       return resp.json();
     },
     ITIN_TTL
+  );
+}
+
+export async function apiHazards(params: {
+  lat: number;
+  lon: number;
+  radius: number;
+}): Promise<any> {
+  const key = stableKeyFrom({ endpoint: '/api/hazards', params });
+  const qs = new URLSearchParams({
+    lat: String(params.lat),
+    lon: String(params.lon),
+    radius: String(params.radius),
+  });
+  return withCache(
+    'hazards',
+    key,
+    async () => {
+      const resp = await fetch(`/api/hazards?${qs}`, { method: 'GET' });
+      if (!resp.ok) throw new Error(`hazards ${resp.status}`);
+      return resp.json();
+    },
+    HAZARDS_TTL
   );
 }

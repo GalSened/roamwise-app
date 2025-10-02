@@ -2,8 +2,9 @@
 console.log('Simple app starting...');
 
 // Import API client (feature-flagged offline caching)
-import { apiRoute, apiWeather, apiPlan } from './src/lib/api.js';
+import { apiRoute, apiWeather, apiPlan, apiHazards, apiGetProfile, apiUpdateProfile, apiSigninStart, apiSigninFinish, apiMe } from './src/lib/api.js';
 import { saveItinerary, loadItinerary } from './src/lib/itinerary.js';
+import { idbSetLastRoute, idbGetLastRoute } from './src/lib/idb.js';
 import { mountUpdateBanner } from './src/lib/update-banner.js';
 import { mountDevDrawer } from './src/lib/dev-drawer.js';
 import { flags } from './src/lib/flags.js';
@@ -12,8 +13,12 @@ import { CarModeOverlay } from './src/copilot/car-mode-overlay.js';
 import { sugStream } from './src/copilot/sug-stream.js';
 import { ResultsDrawer } from './src/copilot/results-drawer.js';
 import { onNavigate } from './src/copilot/nav-bus.js';
-import { registerMap, focus, drawRoute, clearRoute } from './src/map/map-adapter.js';
+import { registerMap, focus, drawRoute, clearRoute, displayHazards, clearHazards } from './src/map/map-adapter.js';
 import { computeTempRoute } from './src/routes/route-exec.js';
+import { fmtDistance as fmtDistanceOld, fmtDuration as fmtDurationOld } from './src/lib/format.js';
+import { fmtDistance, fmtDuration } from './src/lib/fmt-i18n.js';
+import { i18nInit, i18nSet, t, getLang } from './src/lib/i18n.js';
+import { googleMapsUrl, appleMapsUrl, wazeUrl } from './src/lib/navlinks.js';
 import { createDevLogin } from './src/components/DevLogin.js';
 import { getProfile } from './src/lib/api-auth.js';
 import { setPrefs, clearPrefs } from './src/copilot/prefs-stream.js';
@@ -24,9 +29,24 @@ class SimpleNavigation {
     this.init();
   }
 
-  init() {
+  async init() {
     console.log('Initializing navigation...');
+
+    // Initialize i18n system
+    await i18nInit('he');
+
+    // Wire language toggle buttons
+    document.getElementById('btn-lang-he')?.addEventListener('click', () => i18nSet('he'));
+    document.getElementById('btn-lang-en')?.addEventListener('click', () => i18nSet('en'));
+
+    // React to language changes
+    window.addEventListener('i18n:changed', () => this.refreshStaticTexts());
+    this.refreshStaticTexts();
+
     this.setupDevLogin(); // Mount DevLogin component and handle auth events
+    this.setupWhoAmI(); // Fetch and display user profile in header pill
+    this.setupOfflineDetection(); // Wire offline banner and behavior
+    this.ensureSignedIn(); // Family Mode signin check
     this.setupNavigation();
     this.setupThemeToggle();
     this.setupFormInteractions(); // Add this to ensure search works
@@ -34,11 +54,50 @@ class SimpleNavigation {
     this.setupWeather(); // Wire weather API client
     this.setupItinerary(); // Wire itinerary save/load
     this.setupMap(); // Initialize map
+    this.setupProfilePrefs(); // Wire profile preferences save handler
     startCopilotContext(); // Wire context engine (flag-gated)
     this.setupCarModeOverlay(); // Wire Car-Mode overlay (flag-gated)
     this.setupResultsDrawer(); // Wire results drawer (flag-gated)
     this.setupNavigateHandler(); // Wire navigate event handler
     this.showView('search');
+  }
+
+  refreshStaticTexts() {
+    // Update header
+    const headerTitle = document.querySelector('.header-title');
+    if (headerTitle) headerTitle.textContent = t('app.title');
+
+    const installBtn = document.getElementById('installBtn');
+    if (installBtn) installBtn.textContent = t('common.install');
+
+    // Update bottom navigation
+    const navButtons = [
+      { view: 'search', key: 'nav.search' },
+      { view: 'trip', key: 'nav.trip' },
+      { view: 'ai', key: 'nav.ai' },
+      { view: 'map', key: 'nav.map' },
+      { view: 'profile', key: 'nav.profile' }
+    ];
+
+    navButtons.forEach(({ view, key }) => {
+      const btn = document.querySelector(`.nav-btn[data-view="${view}"] .nav-label`);
+      if (btn) btn.textContent = t(key);
+    });
+
+    // Update offline banner
+    const offlineBanner = document.getElementById('offline-banner');
+    if (offlineBanner) offlineBanner.textContent = t('offline.banner');
+
+    // Activate current language button
+    const btnHe = document.getElementById('btn-lang-he');
+    const btnEn = document.getElementById('btn-lang-en');
+    const currentLang = getLang();
+    if (btnHe && btnEn) {
+      btnHe.classList.toggle('active', currentLang === 'he');
+      btnEn.classList.toggle('active', currentLang === 'en');
+    }
+
+    console.log('[i18n] Static texts refreshed');
   }
 
   setupDevLogin() {
@@ -78,6 +137,306 @@ class SimpleNavigation {
       console.log('[DevLogin] Login component mounted');
     } catch (error) {
       console.error('[DevLogin] Failed to setup login component:', error);
+    }
+  }
+
+  async setupWhoAmI() {
+    console.log('[WhoAmI] Fetching user profile...');
+    try {
+      const profile = await apiGetProfile();
+      const el = document.getElementById('whoami');
+      if (el) {
+        const tenant = profile.user?.tenant || 'home';
+        const username = profile.user?.username || 'me';
+        el.textContent = `${tenant}:${username}`;
+        console.log('[WhoAmI] Profile loaded:', `${tenant}:${username}`);
+      }
+      // Store profile globally for planner/suggestions
+      window.__rwProfile = profile;
+    } catch (error) {
+      console.warn('[WhoAmI] Failed to load profile (guest mode):', error);
+      const el = document.getElementById('whoami');
+      if (el) {
+        el.textContent = 'guest';
+      }
+      window.__rwProfile = null;
+    }
+  }
+
+  setupProfilePrefs() {
+    console.log('[ProfilePrefs] Setting up profile preferences handler...');
+
+    // Load and populate profile form when profile view is shown
+    const loadProfileForm = async () => {
+      try {
+        const profile = window.__rwProfile || await apiGetProfile();
+        const prefs = profile?.preferences || {};
+
+        // Populate pace
+        const paceEl = document.getElementById('prefPace');
+        if (paceEl && prefs.pace) {
+          paceEl.value = prefs.pace;
+        }
+
+        // Populate likes checkboxes
+        const likesChecks = document.querySelectorAll('input[name="likes"]');
+        const likesArray = prefs.likes || [];
+        likesChecks.forEach((cb) => {
+          cb.checked = likesArray.includes(cb.value);
+        });
+
+        // Populate avoid checkboxes
+        const avoidChecks = document.querySelectorAll('input[name="avoid"]');
+        const avoidArray = prefs.avoid || [];
+        avoidChecks.forEach((cb) => {
+          cb.checked = avoidArray.includes(cb.value);
+        });
+
+        // Populate dietary checkboxes
+        const dietChecks = document.querySelectorAll('input[name="dietary"]');
+        const dietArray = prefs.dietary || [];
+        dietChecks.forEach((cb) => {
+          cb.checked = dietArray.includes(cb.value);
+        });
+
+        // Populate budget
+        const budgetMinEl = document.getElementById('prefBudgetMin');
+        const budgetMaxEl = document.getElementById('prefBudgetMax');
+        if (budgetMinEl && prefs.budget_min !== undefined) {
+          budgetMinEl.value = prefs.budget_min;
+        }
+        if (budgetMaxEl && prefs.budget_max !== undefined) {
+          budgetMaxEl.value = prefs.budget_max;
+        }
+
+        console.log('[ProfilePrefs] Form populated with:', prefs);
+      } catch (error) {
+        console.warn('[ProfilePrefs] Failed to load profile for form:', error);
+      }
+    };
+
+    // Listen for profile view activation
+    const navButtons = document.querySelectorAll('.nav-btn[data-view="profile"]');
+    navButtons.forEach((btn) => {
+      btn.addEventListener('click', loadProfileForm);
+    });
+
+    // Save button handler
+    const saveBtn = document.getElementById('saveProfileBtn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', async () => {
+        console.log('[ProfilePrefs] Saving preferences...');
+        try {
+          // Collect form values
+          const pace = document.getElementById('prefPace')?.value || 'normal';
+
+          const likes = Array.from(document.querySelectorAll('input[name="likes"]:checked'))
+            .map((cb) => cb.value);
+
+          const avoid = Array.from(document.querySelectorAll('input[name="avoid"]:checked'))
+            .map((cb) => cb.value);
+
+          const dietary = Array.from(document.querySelectorAll('input[name="dietary"]:checked'))
+            .map((cb) => cb.value);
+
+          const budget_min = Number(document.getElementById('prefBudgetMin')?.value) || 0;
+          const budget_max = Number(document.getElementById('prefBudgetMax')?.value) || 1000;
+
+          const prefs = { pace, likes, avoid, dietary, budget_min, budget_max };
+
+          // Save to backend
+          await apiUpdateProfile(prefs);
+          console.log('[ProfilePrefs] Preferences saved:', prefs);
+
+          // Refresh whoami pill
+          await this.setupWhoAmI();
+
+          // Show success feedback
+          saveBtn.textContent = '✓ Saved!';
+          setTimeout(() => {
+            saveBtn.textContent = 'Save Preferences';
+          }, 2000);
+        } catch (error) {
+          console.error('[ProfilePrefs] Failed to save preferences:', error);
+          saveBtn.textContent = '✗ Error';
+          setTimeout(() => {
+            saveBtn.textContent = 'Save Preferences';
+          }, 2000);
+        }
+      });
+    }
+  }
+
+  setupOfflineDetection() {
+    console.log('[Offline] Setting up offline detection...');
+
+    const banner = document.getElementById('offline-banner');
+    const hazardsToggle = document.getElementById('hazards-toggle');
+
+    // Helper to update UI based on online/offline status
+    const setOfflineUI = (isOffline) => {
+      console.log('[Offline] Status changed, offline:', isOffline);
+
+      // Toggle banner visibility
+      if (banner) {
+        if (isOffline) {
+          banner.removeAttribute('hidden');
+        } else {
+          banner.setAttribute('hidden', '');
+        }
+      }
+
+      // Disable hazards controls when offline
+      if (hazardsToggle) {
+        hazardsToggle.disabled = isOffline;
+        if (isOffline) {
+          hazardsToggle.title = 'Hazards unavailable offline';
+        } else {
+          hazardsToggle.title = 'Toggle hazards';
+        }
+      }
+    };
+
+    // Listen to online/offline events
+    window.addEventListener('online', () => setOfflineUI(false));
+    window.addEventListener('offline', () => setOfflineUI(true));
+
+    // Set initial state
+    setOfflineUI(!navigator.onLine);
+  }
+
+  // ---- Family Mode Signin (Step 34) ----
+
+  async ensureSignedIn() {
+    console.log('[FamilyAuth] Checking signin status...');
+
+    // Check if already signed in
+    try {
+      const meResp = await apiMe();
+      if (meResp.ok && meResp.session) {
+        console.log('[FamilyAuth] Already signed in:', meResp.session);
+        this.currentSession = meResp.session;
+        return; // User is signed in, no need to show modal
+      }
+    } catch (error) {
+      console.log('[FamilyAuth] Not signed in, showing modal');
+    }
+
+    // Show modal
+    this.showSigninModal();
+  }
+
+  showSigninModal() {
+    const modal = document.getElementById('signin-modal');
+    const form = document.getElementById('signin-form');
+    const phoneInput = document.getElementById('signin-phone');
+    const nameContainer = document.getElementById('name-field-container');
+    const nameInput = document.getElementById('signin-name');
+    const submitBtn = document.getElementById('signin-submit');
+    const messageDiv = document.getElementById('signin-message');
+
+    if (!modal || !form) {
+      console.error('[FamilyAuth] Modal elements not found');
+      return;
+    }
+
+    // Reset form
+    form.reset();
+    nameContainer.setAttribute('hidden', '');
+    messageDiv.textContent = '';
+    messageDiv.className = 'signin-message';
+
+    // Show modal
+    modal.removeAttribute('hidden');
+
+    // Track state
+    let isKnownUser = false;
+
+    // Handle form submission
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      messageDiv.textContent = '';
+
+      const phone = phoneInput.value.trim();
+
+      try {
+        if (!isKnownUser) {
+          // Step 1: Check if phone is known
+          const startResp = await apiSigninStart(phone);
+          
+          if (startResp.ok && startResp.known) {
+            // Existing user - proceed to finish
+            console.log('[FamilyAuth] Known user:', startResp.name);
+            messageDiv.textContent = `ברוך שובך, ${startResp.name}!`;
+            messageDiv.className = 'signin-message success';
+            
+            const finishResp = await apiSigninFinish(phone, startResp.name);
+            if (finishResp.ok) {
+              await this.afterSignin(finishResp.user_id);
+              modal.setAttribute('hidden', '');
+            }
+          } else if (startResp.ok && !startResp.known) {
+            // New user - show name field
+            console.log('[FamilyAuth] New user, requesting name');
+            nameContainer.removeAttribute('hidden');
+            nameInput.required = true;
+            nameInput.focus();
+            submitBtn.textContent = 'סיים';
+            messageDiv.textContent = 'מספר חדש! הכנס את שמך';
+            messageDiv.className = 'signin-message';
+            isKnownUser = false;
+          }
+        } else {
+          // Step 2: Finish with name (new user)
+          const name = nameInput.value.trim();
+          if (!name) {
+            messageDiv.textContent = 'נא להזין שם';
+            messageDiv.className = 'signin-message error';
+            submitBtn.disabled = false;
+            return;
+          }
+
+          const finishResp = await apiSigninFinish(phone, name);
+          if (finishResp.ok) {
+            messageDiv.textContent = `ברוך הבא, ${name}!`;
+            messageDiv.className = 'signin-message success';
+            await this.afterSignin(finishResp.user_id);
+            modal.setAttribute('hidden', '');
+          }
+        }
+
+        // After successful start (new user), mark for second submit
+        if (!isKnownUser && nameContainer.hasAttribute('hidden') === false) {
+          isKnownUser = true;
+        }
+
+      } catch (error) {
+        console.error('[FamilyAuth] Signin error:', error);
+        messageDiv.textContent = 'שגיאה בהתחברות. נסה שוב';
+        messageDiv.className = 'signin-message error';
+      } finally {
+        submitBtn.disabled = false;
+      }
+    };
+
+    // Attach event listener
+    form.removeEventListener('submit', handleSubmit); // Remove old listener if any
+    form.addEventListener('submit', handleSubmit);
+  }
+
+  async afterSignin(userId) {
+    console.log('[FamilyAuth] Signin successful, userId:', userId);
+    
+    // Try to fetch and update profile
+    try {
+      const profile = await apiGetProfile();
+      if (profile && profile.user) {
+        console.log('[FamilyAuth] Profile fetched:', profile.user);
+        // Update UI with user info if needed
+      }
+    } catch (error) {
+      console.warn('[FamilyAuth] Could not fetch profile:', error);
     }
   }
 
@@ -338,11 +697,18 @@ class SimpleNavigation {
             // ---- NEW (flagged) path: use orchestrator stub ----
             console.info('[planner] calling /api/plan (stub) due to plannerStub flag');
 
+            // Read profile preferences from global state
+            const profilePrefs = window.__rwProfile?.preferences || {};
+
             const planInputs = {
               preferences: {
                 interests: selectedInterests,
                 duration: selectedDuration,
                 budget: parseInt(budget),
+                // Include profile preferences
+                pace: profilePrefs.pace || 'normal',
+                likes: profilePrefs.likes || [],
+                dietary: profilePrefs.dietary || [],
               },
               startLocation,
             };
@@ -545,6 +911,19 @@ class SimpleNavigation {
         });
 
         console.log('Route data:', routeData);
+
+        // Save route to IDB for offline recall
+        try {
+          await idbSetLastRoute({
+            ts: Date.now(),
+            distance_m: routeData.distance_m || 0,
+            duration_s: routeData.duration_s || 0,
+            geometry: routeData.geometry || null,
+          });
+          console.log('[Offline] Last route saved to IDB');
+        } catch (idbError) {
+          console.warn('[Offline] Failed to save last route:', idbError);
+        }
 
         // Display route results
         routeResults.innerHTML = `
@@ -1030,6 +1409,50 @@ class SimpleNavigation {
     });
   }
 
+  async tryRedrawLastRouteWhenOffline() {
+    console.log('[Offline] Checking for last route to redraw...');
+
+    // Only redraw if offline
+    if (navigator.onLine) {
+      console.log('[Offline] Online, skipping last route redraw');
+      return;
+    }
+
+    try {
+      const lastRoute = await idbGetLastRoute();
+      if (!lastRoute || !lastRoute.geometry) {
+        console.log('[Offline] No last route found in IDB');
+        return;
+      }
+
+      console.log('[Offline] Found last route, redrawing on map...');
+
+      // Redraw polyline on map
+      if (lastRoute.geometry && this.map) {
+        // Assuming geometry is in GeoJSON format with coordinates
+        const coords = lastRoute.geometry.coordinates || lastRoute.geometry;
+        if (coords && coords.length > 0) {
+          // Convert to Leaflet LatLng format [lat, lng]
+          const latlngs = coords.map((coord) => [coord[1], coord[0]]);
+
+          // Draw polyline
+          L.polyline(latlngs, {
+            color: '#3b82f6',
+            weight: 4,
+            opacity: 0.7,
+          }).addTo(this.map);
+
+          // Fit map to route bounds
+          this.map.fitBounds(latlngs);
+
+          console.log('[Offline] Last route redrawn successfully');
+        }
+      }
+    } catch (error) {
+      console.warn('[Offline] Failed to redraw last route:', error);
+    }
+  }
+
   setupMap() {
     // Wait for Leaflet to be loaded
     if (typeof L === 'undefined') {
@@ -1060,6 +1483,9 @@ class SimpleNavigation {
         .openPopup();
 
       console.log('Map initialized successfully');
+
+      // Try to redraw last route if offline
+      this.tryRedrawLastRouteWhenOffline();
 
       // Setup location button
       const locationBtn = document.getElementById('locationBtn');
@@ -1194,25 +1620,107 @@ class SimpleNavigation {
           if (lastFix && lastFix.lat && lastFix.lon) {
             console.info('[Navigate] Computing route from', lastFix, 'to', { lat, lon });
 
-            // Compute route coordinates
-            const routeCoords = await computeTempRoute(lastFix, { lat, lon });
+            // Compute route with metadata
+            const { coordinates, distance_m, duration_s, route_retry_relaxed } = await computeTempRoute(lastFix, { lat, lon });
 
             // Draw route if we got valid coordinates
-            if (routeCoords && routeCoords.length > 0) {
-              drawRoute(routeCoords);
-              console.info('[Navigate] Route drawn with', routeCoords.length, 'points');
+            if (coordinates && coordinates.length > 0) {
+              drawRoute(coordinates);
+              console.info('[Navigate] Route drawn with', coordinates.length, 'points');
+
+              // Display route metrics
+              const metricsEl = document.getElementById('routeMetrics');
+              const distanceEl = document.getElementById('routeDistance');
+              const durationEl = document.getElementById('routeDuration');
+              const avoidChipEl = document.getElementById('avoidChip');
+              if (metricsEl && distanceEl && durationEl && distance_m && duration_s) {
+                distanceEl.textContent = `📏 ${fmtDistance(distance_m)}`;
+                durationEl.textContent = `⏱️ ${fmtDuration(duration_s)}`;
+
+                // Display avoid chip if element exists
+                if (avoidChipEl) {
+                  if (route_retry_relaxed) {
+                    avoidChipEl.textContent = t('route.avoids_relaxed');
+                    avoidChipEl.className = 'route-chip chip-warn';
+                  } else {
+                    avoidChipEl.textContent = t('route.avoids_honored');
+                    avoidChipEl.className = 'route-chip chip-ok';
+                  }
+                  avoidChipEl.style.display = 'inline-flex';
+                }
+
+                metricsEl.style.display = 'flex';
+              }
+
+              // Set up navigation buttons
+              const navButtonsEl = document.getElementById('navButtons');
+              const navGoogleEl = document.getElementById('navGoogle');
+              const navAppleEl = document.getElementById('navApple');
+              const navWazeEl = document.getElementById('navWaze');
+              if (navButtonsEl && navGoogleEl && navAppleEl && navWazeEl) {
+                navGoogleEl.href = googleMapsUrl(lat, lon);
+                navAppleEl.href = appleMapsUrl(lat, lon);
+                navWazeEl.href = wazeUrl(lat, lon);
+                navButtonsEl.style.display = 'flex';
+              }
+
+              // Fetch and display hazards along the route
+              try {
+                // Skip hazards when offline
+                if (!navigator.onLine) {
+                  console.info('[Navigate] Offline, skipping hazards fetch');
+                  clearHazards();
+                  return;
+                }
+
+                console.info('[Navigate] Fetching hazards around destination');
+                const hazardsData = await apiHazards({
+                  lat,
+                  lon,
+                  radius: 10000, // 10km radius
+                });
+
+                if (hazardsData && hazardsData.hazards && hazardsData.hazards.length > 0) {
+                  displayHazards(hazardsData.hazards);
+                  console.info('[Navigate] Displayed', hazardsData.hazards.length, 'hazards');
+                } else {
+                  console.debug('[Navigate] No hazards found in area');
+                  clearHazards();
+                }
+              } catch (error) {
+                console.warn('[Navigate] Failed to fetch hazards:', error.message);
+                clearHazards();
+              }
             } else {
               console.warn('[Navigate] No route coordinates returned');
               clearRoute();
+              clearHazards();
+              // Hide route UI
+              const metricsEl = document.getElementById('routeMetrics');
+              const navButtonsEl = document.getElementById('navButtons');
+              if (metricsEl) metricsEl.style.display = 'none';
+              if (navButtonsEl) navButtonsEl.style.display = 'none';
             }
           } else {
             console.debug('[Navigate] No GPS fix available, skipping route');
             clearRoute();
+            clearHazards();
+            // Hide route UI
+            const metricsEl = document.getElementById('routeMetrics');
+            const navButtonsEl = document.getElementById('navButtons');
+            if (metricsEl) metricsEl.style.display = 'none';
+            if (navButtonsEl) navButtonsEl.style.display = 'none';
           }
         } catch (error) {
           // Fail safe: route computation failed, but map focus still works
           console.warn('[Navigate] Route computation failed:', error.message);
           clearRoute();
+          clearHazards();
+          // Hide route UI
+          const metricsEl = document.getElementById('routeMetrics');
+          const navButtonsEl = document.getElementById('navButtons');
+          if (metricsEl) metricsEl.style.display = 'none';
+          if (navButtonsEl) navButtonsEl.style.display = 'none';
         }
 
         // Add a marker at destination
@@ -1230,6 +1738,112 @@ class SimpleNavigation {
     }
   }
 }
+
+// ---- Release Notes & Feedback Modal Handlers ----
+
+/**
+ * Open Release Notes modal
+ */
+async function openNotes() {
+  try {
+    const response = await fetch('/roamwise-app/release-notes.json', { cache: 'no-cache' });
+    const data = await response.json();
+    const ul = document.getElementById('notes-list');
+    ul.innerHTML = '';
+    data.items.forEach(item => {
+      const li = document.createElement('li');
+      li.innerHTML = `<strong>${item.title}</strong> — ${item.desc}`;
+      ul.appendChild(li);
+    });
+    document.getElementById('notes-modal').hidden = false;
+  } catch (error) {
+    console.error('[ReleaseNotes] Failed to load:', error);
+  }
+}
+
+/**
+ * Close Release Notes modal
+ */
+function closeNotes() {
+  document.getElementById('notes-modal').hidden = true;
+}
+
+/**
+ * Open Feedback modal
+ */
+function openFeedback() {
+  document.getElementById('feedback-modal').hidden = false;
+  document.getElementById('fb-status').textContent = '';
+  document.getElementById('fb-text').value = '';
+}
+
+/**
+ * Close Feedback modal
+ */
+function closeFeedback() {
+  document.getElementById('feedback-modal').hidden = true;
+}
+
+/**
+ * Send feedback to backend
+ */
+async function sendFeedback() {
+  const text = (document.getElementById('fb-text').value || '').trim();
+  const statusEl = document.getElementById('fb-status');
+
+  if (!text) {
+    statusEl.textContent = 'Please write something first.';
+    return;
+  }
+
+  statusEl.textContent = 'Sending…';
+
+  try {
+    const response = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        page: location.pathname,
+        ts: Date.now()
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    statusEl.textContent = 'Thanks! Feedback sent.';
+    document.getElementById('fb-text').value = '';
+
+    // Auto-close after 2 seconds
+    setTimeout(() => {
+      closeFeedback();
+    }, 2000);
+  } catch (error) {
+    console.error('[Feedback] Failed to send:', error);
+    statusEl.textContent = 'Failed to send. Try again later.';
+  }
+}
+
+// Wire up modal event listeners
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('notes-close')?.addEventListener('click', closeNotes);
+  document.getElementById('fb-cancel')?.addEventListener('click', closeFeedback);
+  document.getElementById('fb-send')?.addEventListener('click', sendFeedback);
+
+  // Close modals when clicking outside
+  document.getElementById('notes-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'notes-modal') closeNotes();
+  });
+  document.getElementById('feedback-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'feedback-modal') closeFeedback();
+  });
+});
+
+// Expose globally for dev-drawer buttons
+window.openNotes = openNotes;
+window.openFeedback = openFeedback;
 
 // Wait for DOM to be ready
 if (document.readyState === 'loading') {

@@ -1,0 +1,8 @@
+{
+  "version": "2025.10.01",
+  "items": [
+    {"title": "Hazard layers", "desc": "Weather & traffic hazards with live map layers and popups."},
+    {"title": "Real routing", "desc": "Cloud OSRM routes with ETA & distance chips, plus external nav links."},
+    {"title": "Health dashboard", "desc": "Admin /healthz and /health with live metrics & provider checks."}
+  ]
+}

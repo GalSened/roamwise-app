@@ -3,11 +3,12 @@ export type StoreMap = {
   itineraries: 'id';
   routes: 'id';
   weatherSnapshots: 'id';
+  hazards: 'id';
   meta: 'key';
 };
 
 const DB_NAME = 'traveling-app';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -17,10 +18,22 @@ function openDB(): Promise<IDBDatabase> {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
-      db.createObjectStore('itineraries', { keyPath: 'id' });
-      db.createObjectStore('routes', { keyPath: 'id' });
-      db.createObjectStore('weatherSnapshots', { keyPath: 'id' });
-      db.createObjectStore('meta', { keyPath: 'key' });
+      // Create stores if they don't exist (handles both fresh installs and upgrades)
+      if (!db.objectStoreNames.contains('itineraries')) {
+        db.createObjectStore('itineraries', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('routes')) {
+        db.createObjectStore('routes', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('weatherSnapshots')) {
+        db.createObjectStore('weatherSnapshots', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('hazards')) {
+        db.createObjectStore('hazards', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('meta')) {
+        db.createObjectStore('meta', { keyPath: 'key' });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);

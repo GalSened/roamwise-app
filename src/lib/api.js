@@ -129,3 +129,81 @@ export async function apiPlan(body) {
     PLAN_TTL
   );
 }
+
+/**
+ * Get user profile (tenant, user, preferences)
+ * Credentials are included to send/receive JWT cookies
+ * @returns {Promise<{user: object, preferences: object, updatedAt: string}>}
+ */
+export async function apiGetProfile() {
+  const resp = await fetch('/api/profile', {
+    method: 'GET',
+    credentials: 'include',
+  });
+  if (!resp.ok) throw new Error(`profile GET ${resp.status}`);
+  return resp.json();
+}
+
+/**
+ * Update user preferences
+ * @param {object} prefs - Preferences object {pace, likes, avoid, dietary, budget_min, budget_max}
+ * @returns {Promise<{ok: boolean}>}
+ */
+export async function apiUpdateProfile(prefs) {
+  const resp = await fetch('/api/profile', {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(prefs),
+  });
+  if (!resp.ok) throw new Error(`profile PUT ${resp.status}`);
+  return resp.json();
+}
+
+// ---- Family Mode Auth (Step 34) ----
+
+/**
+ * Check if phone is known in family users DB
+ * @param {string} phone - Phone number (will be normalized to E.164)
+ * @returns {Promise<{ok: boolean, known: boolean, name: string|null}>}
+ */
+export async function apiSigninStart(phone) {
+  const resp = await fetch('/api/family/signin/start', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone }),
+  });
+  if (!resp.ok) throw new Error(`family signin/start ${resp.status}`);
+  return resp.json();
+}
+
+/**
+ * Create or update family user
+ * @param {string} phone - Phone number
+ * @param {string} name - User's name
+ * @returns {Promise<{ok: boolean, user_id: string}>}
+ */
+export async function apiSigninFinish(phone, name) {
+  const resp = await fetch('/api/family/signin/finish', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, name }),
+  });
+  if (!resp.ok) throw new Error(`family signin/finish ${resp.status}`);
+  return resp.json();
+}
+
+/**
+ * Get current family session
+ * @returns {Promise<{ok: boolean, session: object}>}
+ */
+export async function apiMe() {
+  const resp = await fetch('/api/me', {
+    method: 'GET',
+    credentials: 'include',
+  });
+  if (!resp.ok) throw new Error(`/api/me ${resp.status}`);
+  return resp.json();
+}
