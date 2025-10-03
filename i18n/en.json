@@ -6,5 +6,12 @@
   "planner.destination": "Destination (optional)",
   "planner.near_radius": "Nearby radius (km)",
   "planner.detour_minutes": "Along-route max detour (min)",
-  "planner.plan_day": "Plan Day"
+  "planner.plan_day": "Plan Day",
+  "comfort.tags": "Comfort",
+  "comfort.hint": "Outfit",
+  "comfort.UV": "UV",
+  "comfort.HEAT": "Heat",
+  "comfort.WIND": "Wind",
+  "comfort.RAIN": "Rain",
+  "comfort.comfortable": "comfortable conditions"
 }

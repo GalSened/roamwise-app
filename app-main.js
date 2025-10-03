@@ -1,4 +1,6 @@
 // Simple JavaScript implementation to ensure navigation works
+import { t } from './src/lib/i18n.js';
+
 console.log('Simple app starting...');
 
 class SimpleNavigation {
@@ -344,6 +346,41 @@ class SimpleNavigation {
     }
   }
 
+  /**
+   * Render comfort tags and outfit hint for a leg/POI
+   * @param {object} leg - The timeline leg or SAR item
+   * @returns {string} HTML string for comfort section
+   */
+  renderComfort(leg) {
+    const c = leg.comfort || {};
+    const tags = Array.isArray(c.tags) ? c.tags : [];
+    const hint = (leg.outfit_hint && typeof leg.outfit_hint === 'string') ? leg.outfit_hint : t('comfort.comfortable');
+
+    if (tags.length === 0 && hint === t('comfort.comfortable')) {
+      return ''; // No comfort data to show
+    }
+
+    let html = '<div class="comfort">';
+
+    // Tags row
+    if (tags.length > 0) {
+      html += `<div><span class="label">${t('comfort.tags')}:</span>`;
+      for (const tag of tags) {
+        const key = `comfort.${tag}`;
+        html += `<span class="tag tag-${tag}">${t(key)}</span>`;
+      }
+      html += '</div>';
+    }
+
+    // Outfit hint row
+    if (hint) {
+      html += `<div class="hint"><span class="label">${t('comfort.hint')}:</span>${hint}</div>`;
+    }
+
+    html += '</div>';
+    return html;
+  }
+
   setupPlannerUI() {
     // Toggle start source buttons
     const btnCurrent = document.getElementById('btnStartCurrent');
@@ -510,6 +547,7 @@ class SimpleNavigation {
                 if (leg.to.detour_min !== undefined) {
                   html += `<div class="meta">🔀 Detour: ${leg.to.detour_min} min</div>`;
                 }
+                html += this.renderComfort(leg);
                 html += '</div>';
               }
             }
@@ -533,6 +571,7 @@ class SimpleNavigation {
               if (sar.detour_min !== undefined) {
                 html += `<div class="meta">🔀 Detour: ${sar.detour_min} min</div>`;
               }
+              html += this.renderComfort(sar);
               html += '</div>';
             }
           }

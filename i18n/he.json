@@ -6,5 +6,12 @@
   "planner.destination": "יעד (לא חובה)",
   "planner.near_radius": "רדיוס בקרבת ההתחלה (ק\"מ)",
   "planner.detour_minutes": "עיקוף מירבי לאורך המסלול (דק׳)",
-  "planner.plan_day": "תכנן יום"
+  "planner.plan_day": "תכנן יום",
+  "comfort.tags": "נוחות",
+  "comfort.hint": "לבוש",
+  "comfort.UV": "UV",
+  "comfort.HEAT": "חום",
+  "comfort.WIND": "רוח",
+  "comfort.RAIN": "גשם",
+  "comfort.comfortable": "תנאים נוחים"
 }
