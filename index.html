@@ -3,122 +3,589 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Traveling — AI-Powered Travel Planner</title>
-  <meta name="description" content="Smart travel planning with weather-aware routing, voice AI, and in-app navigation">
+  <title>RoamWise — AI-Powered Travel Planner</title>
+  <meta name="description" content="Smart travel planning with o3-mini AI integration">
   
   <!-- PWA -->
-  <link rel="manifest" href="/roamwise-app/manifest.webmanifest">
   <meta name="theme-color" content="#0066cc">
-  <link rel="apple-touch-icon" href="/roamwise-app/icons/icon-192.png">
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  
   <style>
-    /* Prevent flash of unstyled content */
-    body { 
-      opacity: 0; 
-      transition: opacity 0.3s;
+    /* Base styles */
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body { 
       font-family: 'Rubik', system-ui, sans-serif;
       background: #f8fafc;
+      line-height: 1.6;
     }
-    body.loaded { opacity: 1; }
     
-    /* Loading screen */
-    .loading-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, #0066cc, #3b82f6);
+    /* App layout */
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
+    }
+    
+    /* Header */
+    .app-header {
+      background: white;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      justify-content: center;
-      color: white;
-      z-index: 9999;
     }
     
-    .loading-logo {
-      font-size: 2rem;
-      margin-bottom: 1rem;
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #0066cc;
     }
     
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(255,255,255,0.3);
-      border-top: 3px solid white;
+    .theme-toggle {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
       border-radius: 50%;
-      animation: spin 1s linear infinite;
     }
     
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    /* Main content */
+    .app-main {
+      flex: 1;
+      padding: 2rem 1rem 5rem 1rem;
+      overflow-y: auto;
     }
     
-    .error-screen {
+    .app-view {
       display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      text-align: center;
-      padding: 2rem;
     }
     
-    .error-screen h1 {
-      color: #ef4444;
+    .app-view.active {
+      display: block;
+    }
+    
+    /* Search view */
+    .view-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .view-header h1 {
+      font-size: 2rem;
+      color: #1e293b;
+      margin-bottom: 0.5rem;
+    }
+    
+    .search-form {
+      max-width: 600px;
+      margin: 0 auto 2rem;
+    }
+    
+    .search-input-group {
+      display: flex;
+      gap: 1rem;
       margin-bottom: 1rem;
     }
     
-    .error-screen button {
-      background: #3b82f6;
+    .search-input {
+      flex: 1;
+      padding: 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .search-input:focus {
+      border-color: #0066cc;
+    }
+    
+    .search-btn {
+      background: #0066cc;
       color: white;
       border: none;
+      padding: 1rem 2rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .search-btn:hover {
+      background: #0052a3;
+    }
+    
+    .search-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .quick-categories {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .category-btn {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .category-btn:hover {
+      background: #e2e8f0;
+    }
+    
+    /* Search results */
+    .search-results {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .search-result {
+      background: white;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .search-result h3 {
+      color: #1e293b;
+      margin-bottom: 0.5rem;
+    }
+    
+    .result-rating {
+      color: #64748b;
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+    
+    .ai-reason {
+      background: #f0f9ff;
+      padding: 0.75rem;
+      border-radius: 0.25rem;
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: #0369a1;
+    }
+    
+    /* Trip planning */
+    .trip-form {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .form-group {
+      margin-bottom: 2rem;
+    }
+    
+    .form-group label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #1e293b;
+    }
+    
+    .duration-options {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .duration-option {
+      background: #f1f5f9;
+      border: 2px solid #e2e8f0;
       padding: 0.75rem 1.5rem;
       border-radius: 0.5rem;
       cursor: pointer;
-      font-size: 1rem;
+      transition: all 0.2s;
+    }
+    
+    .duration-option.selected {
+      background: #0066cc;
+      color: white;
+      border-color: #0066cc;
+    }
+    
+    .interests-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.5rem;
+    }
+    
+    .interest-option {
+      background: #f1f5f9;
+      border: 2px solid #e2e8f0;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    
+    .interest-option.selected {
+      background: #0066cc;
+      color: white;
+      border-color: #0066cc;
+    }
+    
+    .budget-slider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .budget-slider input {
+      flex: 1;
+    }
+    
+    .budget-display {
+      font-weight: 600;
+      color: #0066cc;
+      font-size: 1.25rem;
+    }
+    
+    .generate-btn {
+      width: 100%;
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      font-size: 1.1rem;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    
+    .trip-results {
+      max-width: 800px;
+      margin: 2rem auto 0;
+    }
+    
+    .trip-result {
+      background: white;
+      border-radius: 0.5rem;
+      padding: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .trip-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    
+    .trip-stat {
+      text-align: center;
+      padding: 1rem;
+      background: #f8fafc;
+      border-radius: 0.5rem;
+    }
+    
+    .stat-label {
+      display: block;
+      font-size: 0.875rem;
+      color: #64748b;
+      margin-bottom: 0.25rem;
+    }
+    
+    .stat-value {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 1.1rem;
+    }
+    
+    /* Navigation */
+    .bottom-nav {
+      display: flex !important;
+      background: white;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+      padding: 0.5rem;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .nav-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      padding: 0.75rem 0.5rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      transition: color 0.2s;
+      color: #64748b;
+    }
+    
+    .nav-btn.active {
+      color: #0066cc;
+    }
+    
+    .nav-icon {
+      font-size: 1.25rem;
+    }
+    
+    .nav-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    /* AI Assistant */
+    .ai-interface {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .voice-section {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .voice-btn {
+      background: linear-gradient(135deg, #0066cc, #3b82f6);
+      color: white;
+      border: none;
+      padding: 2rem;
+      border-radius: 1rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0 auto;
+      transition: transform 0.2s;
+    }
+    
+    .voice-btn:hover {
+      transform: scale(1.05);
+    }
+    
+    .voice-icon {
+      font-size: 2rem;
+    }
+    
+    .voice-text {
+      font-weight: 500;
+    }
+    
+    .quick-actions {
+      margin-top: 2rem;
+    }
+    
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+    
+    .action-btn {
+      background: white;
+      border: 2px solid #e2e8f0;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    
+    .action-btn:hover {
+      border-color: #0066cc;
+      color: #0066cc;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .app-main {
+        padding: 1rem 0.5rem;
+      }
+      
+      .search-input-group {
+        flex-direction: column;
+      }
+      
+      .duration-options {
+        justify-content: center;
+      }
+      
+      .interests-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    /* Force visibility - override any external CSS */
+    .app-view.active {
+      display: block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: none !important;
+    }
+    
+    #searchView {
+      display: block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* Planner Controls (Step 7B) */
+    .planner-controls {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .planner-controls .row {
+      margin: 12px 0;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .planner-controls .row label {
+      font-weight: 500;
+      min-width: 120px;
+      color: #333;
+    }
+
+    .seg {
+      display: inline-flex;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .seg-btn {
+      padding: 8px 16px;
+      border: 0;
+      background: #f4f4f4;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+
+    .seg-btn:hover {
+      background: #e8e8e8;
+    }
+
+    .seg-btn.active {
+      background: #1976d2;
+      color: #fff;
+    }
+
+    .sliders {
+      flex-direction: column;
+      align-items: stretch !important;
+      gap: 16px;
+    }
+
+    .sliders .slider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sliders .slider label {
+      min-width: auto;
+      flex: 1;
+    }
+
+    .sliders .slider input[type="range"] {
+      flex: 2;
+      min-width: 150px;
+    }
+
+    .sliders .slider span {
+      min-width: 30px;
+      font-weight: 600;
+      color: #1976d2;
+    }
+
+    .planner-results {
+      background: white;
+      border-radius: 12px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .planner-results .poi {
+      padding: 16px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .planner-results .poi:last-child {
+      border-bottom: none;
+    }
+
+    .poi .meta {
+      font-size: 13px;
+      opacity: 0.7;
+      margin-top: 4px;
+    }
+
+    .planner-results .header {
+      background: #f8fafc;
+      padding: 16px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .planner-results .header div {
+      margin: 4px 0;
+      font-size: 14px;
+    }
+
+    .planner-results hr {
+      margin: 12px 0;
+      border: none;
+      border-top: 1px solid #e2e8f0;
     }
   </style>
-</head>
+  <script type="module" crossorigin src="/roamwise-app/assets/index.simple-BMXtb2UU.js"></script>
+<link rel="manifest" href="/roamwise-app/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/roamwise-app/registerSW.js"></script></head>
 <body>
-  <!-- Loading Screen -->
-  <div id="loadingScreen" class="loading-screen">
-    <div class="loading-logo">🧭 Traveling</div>
-    <div class="loading-spinner"></div>
-    <p style="margin-top: 1rem; opacity: 0.8;">Loading your travel companion...</p>
-  </div>
-
-  <!-- Error Screen -->
-  <div id="errorScreen" class="error-screen">
-    <h1>⚠️ Failed to Load</h1>
-    <p style="color: #64748b; margin-bottom: 2rem;">
-      There was an error loading the Traveling app. Please check your connection and try again.
-    </p>
-    <button onclick="window.location.reload()">Reload App</button>
-  </div>
-
-  <!-- Main App Container -->
-  <div id="app" style="display: none;">
+  <div class="app-container">
     <!-- Header -->
     <header class="app-header">
       <div class="header-brand">
-        <span class="header-logo">🧭</span>
-        <span class="header-title">Traveling</span>
+        <span>🧭</span>
+        <span>RoamWise</span>
       </div>
-      <div class="header-actions">
-        <button id="themeToggle" class="theme-toggle" title="Toggle theme">🌓</button>
-        <button id="installBtn" class="install-btn">Install</button>
-      </div>
+      <button id="themeToggle" class="theme-toggle">🌓</button>
     </header>
 
     <!-- Main Content -->
@@ -127,14 +594,14 @@
       <section id="searchView" class="app-view active" data-view="search">
         <div class="view-header">
           <h1>🔍 Find Places</h1>
-          <p>Discover amazing places around you</p>
+          <p>Discover amazing places with AI-powered recommendations</p>
         </div>
         
         <div class="search-form">
           <div class="search-input-group">
             <input 
               type="text" 
-              id="searchInput" 
+              id="freeText" 
               placeholder="What are you looking for?"
               class="search-input"
             >
@@ -149,35 +616,41 @@
           </div>
         </div>
         
-        <div id="searchResults" class="search-results"></div>
+        <div id="list" class="search-results">
+          <div class="search-result">
+            <h3>🔍 Ready to Search</h3>
+            <p>Enter what you're looking for above and our AI will find personalized recommendations!</p>
+            <div class="result-rating">🤖 Powered by o3-mini Personal AI</div>
+          </div>
+        </div>
       </section>
 
       <!-- Trip Planning View -->
       <section id="tripView" class="app-view" data-view="trip">
         <div class="view-header">
           <h1>🗺️ Plan Your Trip</h1>
-          <p>AI-powered trip planning with weather awareness</p>
+          <p>AI-powered trip planning with personalized recommendations</p>
         </div>
         
         <div class="trip-form">
           <div class="form-group">
             <label>Trip Duration</label>
             <div class="duration-options">
-              <button class="duration-btn" data-duration="2">2 hours</button>
-              <button class="duration-btn selected" data-duration="8">Full day</button>
-              <button class="duration-btn" data-duration="16">Weekend</button>
+              <button class="duration-option" data-duration="2">2 hours</button>
+              <button class="duration-option selected" data-duration="8">Full day</button>
+              <button class="duration-option" data-duration="16">Weekend</button>
             </div>
           </div>
           
           <div class="form-group">
             <label>Interests (max 4)</label>
             <div class="interests-grid">
-              <button class="interest-btn" data-interest="food">🍽️ Food</button>
-              <button class="interest-btn" data-interest="nature">🌿 Nature</button>
-              <button class="interest-btn" data-interest="culture">🏛️ Culture</button>
-              <button class="interest-btn" data-interest="shopping">🛍️ Shopping</button>
-              <button class="interest-btn" data-interest="entertainment">🎯 Entertainment</button>
-              <button class="interest-btn" data-interest="relaxation">😌 Relaxation</button>
+              <button class="interest-option" data-interest="food">🍽️ Food</button>
+              <button class="interest-option" data-interest="nature">🌿 Nature</button>
+              <button class="interest-option" data-interest="culture">🏛️ Culture</button>
+              <button class="interest-option" data-interest="shopping">🛍️ Shopping</button>
+              <button class="interest-option" data-interest="entertainment">🎯 Entertainment</button>
+              <button class="interest-option" data-interest="relaxation">😌 Relaxation</button>
             </div>
           </div>
           
@@ -193,8 +666,66 @@
             🤖 Generate Smart Trip
           </button>
         </div>
-        
-        <div id="tripResults" class="trip-results" style="display: none;"></div>
+
+        <!-- Planner Controls (Step 7B) -->
+        <div id="planner-controls" class="planner-controls">
+          <h3 style="margin-bottom: 16px;">🗺️ Day Planner</h3>
+
+          <div class="row">
+            <label data-i18n="planner.start_from">Start from</label>
+            <div class="seg">
+              <button id="btnStartCurrent" class="seg-btn active" data-i18n="planner.my_location">📍 My location</button>
+              <button id="btnStartHotel" class="seg-btn" data-i18n="planner.my_hotel">🏨 My hotel</button>
+            </div>
+          </div>
+
+          <div class="row" id="hotelRow" style="display:none;">
+            <label data-i18n="planner.hotel_name">Hotel name</label>
+            <input id="hotelInput" type="text" placeholder="Hotel Splendido…" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:8px;" />
+          </div>
+
+          <div class="row">
+            <label data-i18n="planner.destination">Destination (optional)</label>
+            <input id="destInput" type="text" placeholder="Dolomites / Sirmione…" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:8px;" />
+          </div>
+
+          <div class="row sliders">
+            <div class="slider">
+              <label for="nearRadius" data-i18n="planner.near_radius">Nearby radius (km)</label>
+              <input id="nearRadius" type="range" min="1" max="30" step="1" value="5" />
+              <span id="nearRadiusVal">5</span>
+            </div>
+            <div class="slider">
+              <label for="detourMin" data-i18n="planner.detour_minutes">Along-route max detour (min)</label>
+              <input id="detourMin" type="range" min="5" max="30" step="1" value="15" />
+              <span id="detourMinVal">15</span>
+            </div>
+          </div>
+
+          <div class="row">
+            <button id="btnPlanDay" class="primary" data-i18n="planner.plan_day" style="width:100%; padding:12px; background:#1976d2; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer;">Plan Day</button>
+          </div>
+        </div>
+
+        <!-- Planner Results -->
+        <div id="planner-results" class="planner-results"></div>
+
+        <div id="enhancedTripDisplay" class="trip-results">
+          <div class="trip-result">
+            <h3>🗺️ AI Trip Planning</h3>
+            <p>Configure your preferences above and generate a personalized itinerary!</p>
+            <div class="trip-summary">
+              <div class="trip-stat">
+                <span class="stat-label">AI Model:</span>
+                <span class="stat-value">o3-mini</span>
+              </div>
+              <div class="trip-stat">
+                <span class="stat-label">Status:</span>
+                <span class="stat-value">Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- AI Assistant View -->
@@ -226,19 +757,6 @@
         </div>
       </section>
 
-      <!-- Map View -->
-      <section id="mapView" class="app-view" data-view="map">
-        <div id="map" class="map-container"></div>
-        
-        <button id="locationBtn" class="location-btn">
-          📍 My Location
-        </button>
-        
-        <div class="map-search">
-          <input type="text" placeholder="Search on map..." class="map-search-input">
-        </div>
-      </section>
-
       <!-- Profile View -->
       <section id="profileView" class="app-view" data-view="profile">
         <div class="view-header">
@@ -247,33 +765,17 @@
         </div>
         
         <div class="profile-content">
-          <div class="stats-section">
+          <div class="trip-result">
             <h3>Your Stats</h3>
-            <div class="stats-grid">
-              <div class="stat-item">
-                <div class="stat-number" id="totalTrips">0</div>
-                <div class="stat-label">Trips Planned</div>
+            <div class="trip-summary">
+              <div class="trip-stat">
+                <span class="stat-label">Trips Planned</span>
+                <span class="stat-value">0</span>
               </div>
-              <div class="stat-item">
-                <div class="stat-number" id="placesVisited">0</div>
-                <div class="stat-label">Places Visited</div>
+              <div class="trip-stat">
+                <span class="stat-label">Places Visited</span>
+                <span class="stat-value">0</span>
               </div>
-            </div>
-          </div>
-          
-          <div class="settings-section">
-            <h3>Settings</h3>
-            <div class="setting-item">
-              <label>
-                <input type="checkbox" id="voiceEnabled" checked>
-                Voice Guidance
-              </label>
-            </div>
-            <div class="setting-item">
-              <label>
-                <input type="checkbox" id="weatherAware" checked>
-                Weather-Aware Planning
-              </label>
             </div>
           </div>
         </div>
@@ -294,10 +796,6 @@
         <span class="nav-icon">🗺️</span>
         <span class="nav-label">Trip</span>
       </button>
-      <button class="nav-btn" data-view="map">
-        <span class="nav-icon">📍</span>
-        <span class="nav-label">Map</span>
-      </button>
       <button class="nav-btn" data-view="profile">
         <span class="nav-icon">👤</span>
         <span class="nav-label">Profile</span>
@@ -305,25 +803,70 @@
     </nav>
   </div>
 
-  <!-- Scripts -->
-  <script src="/roamwise-app/app-main.js"></script>
-  <script src="/roamwise-app/app.js"></script>
+  <!-- JavaScript -->
   
+  <!-- Inline navigation fix for immediate functionality -->
   <script>
-    // Show app when loaded and hide loading screen
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        document.body.classList.add('loaded');
-      }, 1500);
-    });
+    console.log('Navigation fallback loading...');
     
-    // Error handling
-    window.addEventListener('error', () => {
-      document.getElementById('loadingScreen').style.display = 'none';
-      document.getElementById('errorScreen').style.display = 'flex';
-    });
+    // Simple navigation function
+    function setupNavigation() {
+      console.log('Setting up navigation fallback...');
+      
+      const navButtons = document.querySelectorAll('.nav-btn');
+      const views = document.querySelectorAll('.app-view');
+      
+      console.log('Found nav buttons:', navButtons.length);
+      console.log('Found views:', views.length);
+      
+      // Function to show a specific view
+      function showView(viewName) {
+        console.log('Showing view:', viewName);
+        
+        // Hide all views
+        views.forEach(view => {
+          view.classList.remove('active');
+          view.style.display = 'none';
+        });
+        
+        // Show target view
+        const targetView = document.querySelector(`[data-view="${viewName}"]`);
+        if (targetView) {
+          targetView.classList.add('active');
+          targetView.style.display = 'block';
+          console.log('View activated:', viewName);
+        } else {
+          console.error('View not found:', viewName);
+        }
+        
+        // Update navigation buttons
+        navButtons.forEach(button => {
+          button.classList.remove('active');
+          if (button.getAttribute('data-view') === viewName) {
+            button.classList.add('active');
+          }
+        });
+      }
+      
+      // Add click listeners to navigation buttons
+      navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const targetView = button.getAttribute('data-view');
+          console.log('Navigation clicked:', targetView);
+          showView(targetView);
+        });
+      });
+      
+      // Show search view by default
+      showView('search');
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupNavigation);
+    } else {
+      setupNavigation();
+    }
   </script>
 </body>
 </html>
