@@ -29,9 +29,10 @@ jobs:
         run: |
           # Create dist directory with our proper app
           mkdir -p dist
-          cp index_new.html dist/index.html
+          cp index.html dist/index.html
           cp app-main.js dist/
           cp app.js dist/
+          cp -r i18n dist/
           cp -r assets dist/ || true
           cp -r icons dist/ || true
           cp manifest.webmanifest dist/ || true
